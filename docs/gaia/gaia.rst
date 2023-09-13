@@ -562,7 +562,7 @@ Your schema name will be automatically added to the provided table name::
   >>> from astroquery.gaia import Gaia
   >>> Gaia.login()
   >>> # Provide a URL pointing to valid VOTable resource
-  >>> url = ("http://tapvizier.u-strasbg.fr/TAPVizieR/tap/sync/?"
+  >>> url = ("https://tapvizier.cds.unistra.fr/TAPVizieR/tap/sync/?"
   ...        "REQUEST=doQuery&lang=ADQL&FORMAT=votable&"
   ...        "QUERY=select+*+from+TAP_SCHEMA.columns+where+table_name='II/336/apass9'")
   >>> job = Gaia.upload_table(upload_resource=url, table_name="table_test_from_url",
@@ -772,7 +772,7 @@ Once you have your cross match finished, you can obtain the results::
   >>> results = job.get_results()
 
 Cross-matching catalogues is one of the most popular operations executed in the Gaia archive.
-For more details about how to run different cross-matches we direct the reader to: https://gea.esac.esa.int/archive-help/tutorials/crossmatch/index.html
+
 
 2.7. Tables sharing
 ~~~~~~~~~~~~~~~~~~~

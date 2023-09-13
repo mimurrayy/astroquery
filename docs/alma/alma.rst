@@ -4,15 +4,6 @@
 ALMA Queries (`astroquery.alma`)
 ********************************
 
-Example Notebooks
-=================
-A series of example notebooks can be found here:
-
- * `What has ALMA observed toward all Messier objects? (an example of querying many sources) <http://nbviewer.jupyter.org/gist/keflavich/e798e10e3bf9a93d1453>`_
- * `ALMA finder chart of the Cartwheel galaxy and public Cycle 1 data quicklooks <http://nbviewer.jupyter.org/gist/keflavich/d5af22578094853e2d24>`_
- * `Finder charts toward many sources with different backgrounds <http://nbviewer.jupyter.org/gist/keflavich/2ef877ec90d774645fee>`_
- * `Finder chart and downloaded data from Cycle 0 observations of Sombrero Galaxy <http://nbviewer.jupyter.org/gist/keflavich/9934c9412d8f58299962>`_
-
 Getting started
 ===============
 
@@ -89,7 +80,7 @@ Authentication
 ==============
 
 Users can log in to acquire proprietary data products.  Login is performed
-via the ALMA CAS (central authentication server).
+via the ALMA OIDC (OpenID Connect) service, Keycloak.
 
 .. doctest-skip::
 
@@ -106,11 +97,11 @@ via the ALMA CAS (central authentication server).
     ICONDOR, enter your ALMA password:
     <BLANKLINE>
     Authenticating ICONDOR on asa.alma.cl...
-    Authentication successful!
+    Successfully logged in to asa.alma.cl
     >>> # After the first login, your password has been stored
     >>> alma.login("ICONDOR")
     Authenticating ICONDOR on asa.alma.cl...
-    Authentication successful!
+    Successfully logged in to asa.alma.cl
 
 Your password will be stored by the `keyring
 <https://pypi.python.org/pypi/keyring>`_ module.

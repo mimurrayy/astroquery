@@ -10,11 +10,11 @@ European Space Agency (ESA)
 """
 import re
 import shutil
-import cgi
 from pathlib import Path
 import tarfile
 import os
 import configparser
+from email.message import Message
 
 from astropy.io import fits
 from astroquery import log
@@ -182,8 +182,8 @@ class XMMNewtonClass(BaseQuery):
         if filename is None:
             response = self._request('HEAD', link)
             response.raise_for_status()
-            filename = re.findall('filename="(.+)"', response.headers[
-                "Content-Disposition"])[0]
+            filename = os.path.basename(re.findall('filename="(.+)"', response.headers[
+                "Content-Disposition"])[0])
         else:
             filename = observation_id + ".png"
 
@@ -293,7 +293,9 @@ class XMMNewtonClass(BaseQuery):
         response = self._request('HEAD', link, save=False, cache=cache)
         # Get original extension
         if 'Content-Type' in response.headers and 'text' not in response.headers['Content-Type']:
-            _, params = cgi.parse_header(response.headers['Content-Disposition'])
+            message = Message()
+            message["content-type"] = response.headers["Content-Disposition"]
+            params = dict(message.get_params()[1:])
         elif response.status_code == 401:
             error = "Data protected by proprietary rights. Please check your credentials"
             raise LoginError(error)
@@ -316,7 +318,7 @@ class XMMNewtonClass(BaseQuery):
 
     def _create_filename(self, filename, observation_id, suffixes):
         if filename is not None:
-            filename = os.path.splitext(filename)[0]
+            filename = os.path.basename(os.path.splitext(filename)[0])
         else:
             filename = observation_id
         filename += "".join(suffixes)

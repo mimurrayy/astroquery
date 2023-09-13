@@ -78,7 +78,7 @@ must still be entered in east-longitude, which means they must be negative; Hori
 will raise an error if given any positive longitude value for such bodies. Instead enter
 the west-longitude - 360. For instance, a site on Mars (id code 499) at 30 degrees
 longitude, 30 degrees latitude, 0 km elevation should be specified as
-``{'body': 499, 'elevation': 0, 'lon': -330, 'lat': 30}``.
+``{'body': 499, 'elevation': 0 * u.km, 'lon': -330 * u.deg, 'lat': 30 * u.deg}``.
 2. This does not apply to the Earth, Moon, and Sun. Although they are prograde,
 Horizons interprets east-longitude as positive and west-longitude as negative for these
 bodies.
@@ -96,14 +96,15 @@ as the observer's location, and Ceres as the target:
 
 .. doctest-remote-data::
 
-    >>> statue_of_liberty = {'lon': -74.0466891,
-    ...                      'lat': 40.6892534,
-    ...                      'elevation': 0.093}
+    >>> import astropy.units as u
+    >>> statue_of_liberty = {'lon': -74.0466891 * u.deg,
+    ...                      'lat': 40.6892534 * u.deg,
+    ...                      'elevation': 0.093 * u.km}
     >>> obj = Horizons(id='Ceres',
     ...                location=statue_of_liberty,
     ...                epochs=2458133.33546)
     >>> print(obj)
-    JPLHorizons instance "Ceres"; location={'lon': -74.0466891, 'lat': 40.6892534, 'elevation': 0.093, 'body': 399}, epochs=[2458133.33546], id_type=None
+    JPLHorizons instance "Ceres"; location={'lon': <Quantity -74.0466891 deg>, 'lat': <Quantity 40.6892534 deg>, 'elevation': <Quantity 0.093 km>, 'body': 399}, epochs=[2458133.33546], id_type=None
 
 2. Specifying topocentric coordinates for both location and observer is often
 useful when performing geometric calculations for artificial satellites without
@@ -116,8 +117,8 @@ at a particular point in time to the center of the crater Double:
 
 .. doctest-remote-data::
 
-    >>> ce_2 = {'lon': 23.522, 'lat': 0.637, 'elevation': 181.2, 'body': 301}
-    >>> double = {'lon': 23.47, 'lat': 0.67, 'elevation': 0, 'body': 301}
+    >>> ce_2 = {'lon': 23.522 * u.deg, 'lat': 0.637 * u.deg, 'elevation': 181.2 * u.km, 'body': 301}
+    >>> double = {'lon': 23.47 * u.deg, 'lat': 0.67 * u.deg, 'elevation': 0 * u.km, 'body': 301}
     >>> obj = Horizons(id=double, location=ce_2, epochs=2454483.84247)
     >>> vecs = obj.vectors()
     >>> distance_km = (vecs['x'] ** 2 + vecs['y'] ** 2 + vecs['z'] ** 2) ** 0.5 * 1.496e8
@@ -244,7 +245,7 @@ skips the query and only returns the query payload. To pass additional settings
 to the request use the ``optional_settings`` passing a key-value
 dictionary.
 
-:meth:`~astroquery.jplhorizons.HorizonsClass.ephemerides` queries by default all
+:meth:`~astroquery.jplhorizons.HorizonsClass.ephemerides` queries by default most
 available quantities from the JPL Horizons servers. This might take a while. If
 you are only interested in a subset of the available quantities, you can query
 only those. The corresponding optional parameter to be set is ``quantities``.
@@ -315,7 +316,7 @@ epochs:
    ...                epochs={'start':'2017-10-01', 'stop':'2017-10-02',
    ...                        'step':'10m'})
    >>> vec = obj.vectors()
-   >>> print(vec)
+   >>> print(vec)  # doctest: +IGNORE_OUTPUT
    targetname    datetime_jd    ...        range              range_rate
       ---             d         ...          AU                 AU / d
    ---------- ----------------- ... ------------------- ---------------------
@@ -352,7 +353,7 @@ respectively.
 How to Use the Query Tables
 ===========================
 
-`astropy table`_ objects created by the query functions are extremely versatile
+`~astropy.table.Table` objects created by the query functions are extremely versatile
 and easy to use. Since all query functions return the same type of table, they
 can all be used in the same way.
 
@@ -392,7 +393,7 @@ As we have seen before, we can display a truncated version of table
 
 Please note the formatting of this table, which is done automatically. Above the
 dashes in the first two lines, you have the column name and its unit. Every
-column is assigned a unit from `astropy units`_. We will learn later how to use
+column is assigned a unit from `astropy.units`. We will learn later how to use
 these units.
 
 
@@ -434,19 +435,19 @@ We can select several columns at a time, for instance RA and DEC for each epoch
 .. code-block:: python
 
    >>> print(eph['datetime_str', 'RA', 'DEC'])    # doctest: +REMOTE_DATA
-       datetime_str       RA      DEC
-           ---           deg      deg
-    ----------------- --------- --------
-    2010-Jan-01 00:00 345.50204 13.43621
-    2011-Jan-01 00:00  78.77158 61.48831
-    2012-Jan-01 00:00 119.85659 54.21955
-    2013-Jan-01 00:00 136.60021  45.8241
-    2014-Jan-01 00:00 147.44947 37.79876
-    2015-Jan-01 00:00 156.58967 29.23058
-    2016-Jan-01 00:00 166.32129 18.48174
-    2017-Jan-01 00:00  180.6992  1.20453
-    2018-Jan-01 00:00 232.11974 -37.9554
-    2019-Jan-01 00:00   16.1066 45.50296
+      datetime_str       RA      DEC
+          ---           deg      deg
+   ----------------- --------- --------
+   2010-Jan-01 00:00 345.50204 13.43621
+   2011-Jan-01 00:00  78.77158 61.48831
+   2012-Jan-01 00:00 119.85659 54.21955
+   2013-Jan-01 00:00 136.60021 45.82409
+   2014-Jan-01 00:00 147.44947 37.79876
+   2015-Jan-01 00:00 156.58967 29.23058
+   2016-Jan-01 00:00 166.32129 18.48174
+   2017-Jan-01 00:00  180.6992  1.20453
+   2018-Jan-01 00:00 232.11974 -37.9554
+   2019-Jan-01 00:00   16.1066 45.50296
 
 
 We can use the same representation to do math with these columns. For instance,
@@ -523,7 +524,7 @@ same dimensions. For instance, we can turn ``RA_rate`` into ``arcsec / s``:
      0.005284855555555556
 
 
-Please refer to the `astropy table`_ and `astropy units`_ documentations for
+Please refer to the `astropy.table` and `astropy.units` documentations for
 more information.
 
 Hints and Tricks
@@ -631,7 +632,7 @@ Acknowledgements
 This submodule makes use of the `JPL Horizons <https://ssd.jpl.nasa.gov/horizons/>`_ system.
 
 The development of this submodule is in part funded through NASA PDART Grant No.
-80NSSC18K0987 to the `sbpy project <http://sbpy.org>`_.
+80NSSC18K0987 to the `sbpy project <https://sbpy.org>`_.
 
 
 Reference/API
@@ -640,10 +641,8 @@ Reference/API
 .. automodapi:: astroquery.jplhorizons
     :no-inheritance-diagram:
 
-.. _Solar System Dynamics group at the Jet Propulation Laboratory: http://ssd.jpl.nasa.gov/
-.. _MPC Observatory codes: http://minorplanetcenter.net/iau/lists/ObsCodesF.html
-.. _astropy table: http://docs.astropy.org/en/stable/table/index.html
-.. _astropy units: http://docs.astropy.org/en/stable/units/index.html
+.. _Solar System Dynamics group at the Jet Propulation Laboratory: https://ssd.jpl.nasa.gov/
+.. _MPC Observatory codes: https://minorplanetcenter.net/iau/lists/ObsCodesF.html
 .. _Definition of Observer Table Quantities: https://ssd.jpl.nasa.gov/horizons/manual.html#observer-table
 .. _Horizons documentation: https://ssd.jpl.nasa.gov/horizons/manual.html#observer-table
 .. _this section of the Horizons manual: <https://ssd.jpl.nasa.gov/horizons/manual.html#center>

@@ -386,6 +386,7 @@ class TestMast:
         assert result == ('COMPLETE', None, None)
 
     def test_get_cloud_uri(self):
+        pytest.importorskip("boto3")
         test_obs_id = '25568122'
 
         # get a product list
@@ -403,6 +404,7 @@ class TestMast:
         assert len(uri) > 0, f'Product for OBSID {test_obs_id} was not found in the cloud.'
 
     def test_get_cloud_uris(self):
+        pytest.importorskip("boto3")
         test_obs_id = '25568122'
 
         # get a product list
@@ -690,6 +692,17 @@ class TestMast:
                                               zoneID=10306)
         assert isinstance(result, Table)
         assert 'PSO J254.2861-04.1091' in result['objName']
+
+        result = mast.Catalogs.query_criteria(coordinates="158.47924 -7.30962",
+                                              radius=0.01,
+                                              catalog="PANSTARRS",
+                                              table="mean",
+                                              data_release="dr2",
+                                              nStackDetections=[("gte", "1")],
+                                              columns=["objName", "distance"],
+                                              sort_by=[("asc", "distance")])
+        assert isinstance(result, Table)
+        assert result['distance'][0] <= result['distance'][1]
 
     def test_catalogs_query_hsc_matchid_async(self):
         catalogData = mast.Catalogs.query_object("M10",
