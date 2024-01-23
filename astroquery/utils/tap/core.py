@@ -230,7 +230,7 @@ class Tap:
         if isError:
             log.info(f"{response.status} {response.reason}")
             raise requests.exceptions.HTTPError(response.reason)
-            return None
+
         log.info("Parsing tables...")
         tsp = TableSaxParser()
         tsp.parseData(response)
@@ -240,7 +240,7 @@ class Tap:
     def launch_job(self, query, *, name=None, output_file=None,
                    output_format="votable", verbose=False,
                    dump_to_file=False, upload_resource=None,
-                   upload_table_name=None, maxrec=None):
+                   upload_table_name=None, maxrec=None, format_with_results_compressed=('votable', 'fits', 'ecsv')):
         """Launches a synchronous job
 
         Parameters
@@ -265,13 +265,18 @@ class Tap:
             This argument is required if upload_resource is provided.
         maxrec : int, optional, default None
             maximum number of rows to return (TAP ``MAXREC`` parameter)
+        format_with_results_compressed: tuple, zipped result formats
+            list of result formats that are returned as zipped files
 
         Returns
         -------
         A Job object
         """
-        output_file_updated = taputils.get_suitable_output_file_name_for_current_output_format(output_file,
-                                                                                               output_format)
+        output_file_updated = taputils.get_suitable_output_file_name_for_current_output_format(
+            output_file,
+            output_format,
+            format_with_results_compressed=format_with_results_compressed)
+
         query = taputils.set_top_in_query(query, 2000)
         if verbose:
             print(f"Launched query: '{query}'")
@@ -322,6 +327,7 @@ class Tap:
                                                                headers,
                                                                isError,
                                                                output_format)
+
         job.outputFile = suitableOutputFile
         job.outputFileUser = output_file
         job.parameters['format'] = output_format
@@ -359,7 +365,7 @@ class Tap:
                          output_format="votable", verbose=False,
                          dump_to_file=False, background=False,
                          upload_resource=None, upload_table_name=None,
-                         autorun=True, maxrec=None):
+                         autorun=True, maxrec=None, format_with_results_compressed=('votable', 'fits', 'ecsv')):
         """Launches an asynchronous job
 
         Parameters
@@ -372,7 +378,7 @@ class Tap:
             file name where the results are saved if dumpToFile is True.
             If this parameter is not provided, the jobid is used instead
         output_format : str, optional, default 'votable'
-            results format
+            result formats
         verbose : bool, optional, default 'False'
             flag to display information about the process
         dump_to_file : bool, optional, default 'False'
@@ -390,14 +396,18 @@ class Tap:
             so the framework can start the job.
         maxrec : int, optional, default None
             maximum number of rows to return (TAP ``MAXREC`` parameter)
+        format_with_results_compressed: tuple, zipped result formats
+            list of result formats that are returned as zipped files
 
         Returns
         -------
         A Job object
         """
 
-        output_file_updated = taputils.get_suitable_output_file_name_for_current_output_format(output_file,
-                                                                                               output_format)
+        output_file_updated = taputils.get_suitable_output_file_name_for_current_output_format(
+            output_file,
+            output_format,
+            format_with_results_compressed=format_with_results_compressed)
 
         if verbose:
             print(f"Launched query: '{query}'")
@@ -512,7 +522,7 @@ class Tap:
         if isError:
             log.info(response.reason)
             raise requests.exceptions.HTTPError(response.reason)
-            return None
+
         # parse job
         jsp = JobSaxParser(async_job=True)
         job = jsp.parseData(response)[0]
@@ -546,7 +556,7 @@ class Tap:
         if isError:
             log.info(response.reason)
             raise requests.exceptions.HTTPError(response.reason)
-            return None
+
         # parse jobs
         jsp = JobListSaxParser(async_job=True)
         jobs = jsp.parseData(response)
@@ -615,7 +625,7 @@ class Tap:
         response = self.__connHandler.execute_tappost(context,
                                                       body,
                                                       contentType,
-                                                      verbose)
+                                                      verbose=verbose)
         if verbose:
             print(response.status, response.reason)
             print(response.getheaders())
@@ -926,7 +936,7 @@ class TapPlus(Tap):
         """
         if group_name is None:
             raise ValueError("'group_name' must be specified")
-        groups = self.load_groups(verbose)
+        groups = self.load_groups(verbose=verbose)
         group = None
         for g in groups:
             if str(g.title) == str(group_name):
@@ -986,7 +996,7 @@ class TapPlus(Tap):
             raise ValueError("Both 'group_name' and 'table_name' must be specified")
         if description is None:
             description = ""
-        group = self.load_group(group_name, verbose)
+        group = self.load_group(group_name=group_name, verbose=verbose)
         if group is None:
             raise ValueError(f"Group '{group_name}' not found.")
         table = self.load_table(table=table_name, verbose=verbose)
@@ -1024,10 +1034,10 @@ class TapPlus(Tap):
         """
         if group_name is None or table_name is None:
             raise ValueError("Both 'group_name' and 'table_name' must be specified")
-        group = self.load_group(group_name, verbose)
+        group = self.load_group(group_name=group_name, verbose=verbose)
         if group is None:
             raise ValueError(f"Group '{group_name}' not found.")
-        shared_items = self.load_shared_items(verbose)
+        shared_items = self.load_shared_items(verbose=verbose)
         shared_item = None
         for s in shared_items:
             if str(s.title) == str(table_name):
@@ -1073,7 +1083,7 @@ class TapPlus(Tap):
             raise ValueError("'group_name' must be specified")
         if description is None:
             description = ""
-        group = self.load_group(group_name, verbose)
+        group = self.load_group(group_name=group_name, verbose=verbose)
         if group is not None:
             raise ValueError(f"Group {group_name} already exists")
         data = (f"action=CreateOrUpdateGroup&resource_type=0&title="
@@ -1105,7 +1115,7 @@ class TapPlus(Tap):
         """
         if group_name is None:
             raise ValueError("'group_name' must be specified")
-        group = self.load_group(group_name, verbose)
+        group = self.load_group(group_name=group_name, verbose=verbose)
         if group is None:
             raise ValueError(f"Group '{group_name}' doesn't exist")
         data = (f"action=RemoveGroup&resource_type=0&group_id={group.id}")
@@ -1137,7 +1147,7 @@ class TapPlus(Tap):
         """
         if group_name is None or user_id is None:
             raise ValueError("Both 'group_name' and 'user_id' must be specified")
-        group = self.load_group(group_name, verbose)
+        group = self.load_group(group_name=group_name, verbose=verbose)
         if group is None:
             raise ValueError(f"Group '{group_name}' doesn't exist")
         user_found_in_group = False
@@ -1147,7 +1157,7 @@ class TapPlus(Tap):
                 break
         if user_found_in_group is True:
             raise ValueError(f"User id '{user_id}' found in group '{group_name}'")
-        if self.is_valid_user(user_id, verbose) is False:
+        if self.is_valid_user(user_id=user_id, verbose=verbose) is False:
             raise ValueError(f"User id '{user_id}' not found.")
         users = ""
         for u in group.users:
@@ -1186,7 +1196,7 @@ class TapPlus(Tap):
         """
         if group_name is None or user_id is None:
             raise ValueError("Both 'group_name' and 'user_id' must be specified")
-        group = self.load_group(group_name, verbose)
+        group = self.load_group(group_name=group_name, verbose=verbose)
         if group is None:
             raise ValueError(f"Group '{group_name}' doesn't exist")
         user_found_in_group = False
@@ -1372,7 +1382,7 @@ class TapPlus(Tap):
             "username": usr,
             "password": pwd}
         connHandler = self.__getconnhandler()
-        response = connHandler.execute_secure(subContext, urlencode(args), verbose)
+        response = connHandler.execute_secure(subcontext=subContext, data=urlencode(args), verbose=verbose)
         if verbose:
             print(response.status, response.reason)
             print(response.getheaders())
@@ -1507,7 +1517,7 @@ class TapPlus(Tap):
             j = self.load_async_job(jobid=job, load_results=False)
             if j is None:
                 raise ValueError(f"Job {job} not found")
-                return
+
             description = j.parameters['query']
         if table_name is None:
             table_name = f"t{j.jobid}"
@@ -1652,7 +1662,7 @@ class TapPlus(Tap):
             }
         return args
 
-    def update_user_table(self, *, table_name=None, list_of_changes=[],
+    def update_user_table(self, *, table_name=None, list_of_changes=(),
                           verbose=False):
         """Updates a user table
 
@@ -1941,7 +1951,7 @@ class TapPlus(Tap):
                 return
         self.__user = str(user)
         self.__pwd = str(password)
-        self.__dologin(verbose)
+        self.__dologin(verbose=verbose)
 
     def login_gui(self, *, verbose=False):
         """Performs a login using a GUI dialog
@@ -1959,13 +1969,13 @@ class TapPlus(Tap):
             self.__user = loginDialog.get_user()
             self.__pwd = loginDialog.get_password()
             # execute login
-            self.__dologin(verbose)
+            self.__dologin(verbose=verbose)
         else:
             self.__isLoggedIn = False
 
     def __dologin(self, *, verbose=False):
         self.__isLoggedIn = False
-        response = self.__execLogin(self.__user, self.__pwd, verbose)
+        response = self.__execLogin(usr=self.__user, pwd=self.__pwd, verbose=verbose)
         # check response
         connHandler = self.__getconnhandler()
         isError = connHandler.check_launch_response_status(response,

@@ -17,16 +17,17 @@ how to acknowledge and cite Gaia data.
 .. _guide: https://gea.esac.esa.int/archive/documentation/credits.html
 
 This package allows the access to the European Space Agency Gaia Archive
-(http://gea.esac.esa.int/archive/).
+(https//gea.esac.esa.int/archive/).
 
 Gaia Archive access is based on a TAP+ REST_ service. TAP+ is an extension of
-Table Access Protocol (TAP: http://www.ivoa.net/documents/TAP/) specified by the
-International Virtual Observatory Alliance (IVOA: http://www.ivoa.net).
+Table Access Protocol (TAP: https//www.ivoa.net/documents/TAP/) specified by the
+International Virtual Observatory Alliance (IVOA_).
 
+.. _IVOA: https//www.ivoa.net
 .. _REST: https://en.wikipedia.org/wiki/Representational_state_transfer
 
 The TAP query language is Astronomical Data Query Language
-(ADQL: http://www.ivoa.net/documents/ADQL/2.0), which is similar
+(ADQL: https//www.ivoa.net/documents/ADQL/2.0), which is similar
 to Structured Query Language (SQL), widely used to query databases.
 
 TAP provides two operation modes:
@@ -62,16 +63,16 @@ This python module provides an Astroquery API access that implements the
 The Gaia Archive table used for the methods where no table is specified is
 the latest data release catalogue.
 
-========
+
 Examples
 ========
 
----------------------------
+
 1. Public access
----------------------------
+----------------
 
 1.1. Query object
-~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^
 
 This query searches for all the objects contained in an arbitrary rectangular projection of the sky.
 
@@ -82,7 +83,7 @@ It is possible to choose which data release to query, by default the Gaia DR3 ca
   >>> Gaia.MAIN_GAIA_TABLE = "gaiadr3.gaia_source"  # Reselect Data Release 3, default
 
 The following example searches for all the sources contained in an squared region of side = 0.1
-degrees around an specific point in RA/Dec coordinates.
+degrees around an specific point in RA/Dec coordinates. The results are sorted by distance (``dist``) in ascending order.
 
 .. doctest-remote-data::
 
@@ -149,9 +150,8 @@ To return an unlimited number of rows set ``Gaia.ROW_LIMIT`` to -1.
     0.05321040019668312 1636148068921376768 Gaia DR3 6633086847005369088 ...                 0.0003                 0.0043           MARCS
   Length = 184 rows
 
-
 1.2. Cone search
-~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^
 
 This query performs a cone search centered at the specified RA/Dec coordinates with the provided
 radius argument.
@@ -182,14 +182,13 @@ radius argument.
   1636148068921376768 Gaia DR3 6636066871411763968 ...  0.020149893249057697
   Length = 50 rows
 
-
 1.3. Getting public tables metadata
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Table and columns metadata are specified by IVOA TAP_ recommendation
 (to access to the actual data, an ADQL query must be executed).
 
-.. _TAP: http://ivoa.info/documents/TAP/20100327/
+.. _TAP: https//ivoa.info/documents/TAP/20100327/
 
 To load only table names metadata (TAP+ capability):
 
@@ -262,7 +261,7 @@ Once a table is loaded, its columns can be inspected:
   ...
 
 1.4. Synchronous query
-~~~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^^^
 
 The results of a synchronous query are stored at the user side (i.e., they are not saved in the
 server). These queries must be used when the amount of data to be retrieved (number of rows)
@@ -358,9 +357,8 @@ Note: you can inspect the status of the job by typing:
   Output file: 1668864127567O-result.vot.gz
   Results: None
 
-
 1.5. Synchronous query on an 'on-the-fly' uploaded table
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 A table can be uploaded to the server in order to be used in a query.
 
@@ -391,7 +389,7 @@ Note: to obtain the current location, type:
   /Current/directory/path
 
 1.6. Asynchronous query
-~~~~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^^^^
 
 Asynchronous queries save results at server side and depends on the user files quota.
 These queries can be accessed at any time. For anonymous users, results are kept for three days.
@@ -433,9 +431,8 @@ available formats are: 'votable', 'votable_plain', 'fits', 'csv' and 'json', def
   Output file: 1611860482314O-result.vot.gz
   Results: None
 
-
 1.7. Asynchronous job removal
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 To remove asynchronous jobs::
 
@@ -443,9 +440,8 @@ To remove asynchronous jobs::
   >>> Gaia.remove_jobs(["job_id_1","job_id_2",...])
 
 
----------------------------
 2. Authenticated access
----------------------------
+-----------------------
 
 Authenticated users are able to access to TAP+ capabilities (shared tables, persistent jobs, etc.)
 In order to authenticate a user, ``login`` or ``login_gui`` methods must be called. After a
@@ -459,9 +455,8 @@ The main differences are:
 * Asynchronous results are kept at server side for ever (until the user decides to remove one of them).
 * Users can access to shared tables.
 
-
 2.1. Login/Logout
-~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^
 
 There are several ways to login to Gaia archive.
 
@@ -509,10 +504,8 @@ To logout::
 
   >>> Gaia.logout()
 
-
-
 2.2. Listing shared tables
-~~~~~~~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 In the Gaia archive user tables can be shared among user groups.
 
@@ -536,21 +529,20 @@ To obtain a list of the tables shared to a user type the following::
   tap_schema.tap_schema.tables
 
 2.3. Uploading table to user space
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 It is now possible to store a table in the private user space. The table to be uploaded can
 be in a VOTable_ located in a given URL, a table stored in a local file in the user machine,
 a pre-computed Astropy table file or a job executed in the Gaia archive.
 
-.. _VOTable: http://www.ivoa.net/documents/VOTable/
+.. _VOTable: https//www.ivoa.net/documents/VOTable/
 
 Each user has a database schema described as: 'user_<user_login_name>'. For instance, if a
 login name is 'joe', the database schema is 'user_joe'. Your uploaded table can be
 referenced as 'user_joe.table_name'
 
-
 2.3.1. Uploading table from URL
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 An already generated VOTable, accessible through a URL, can be uploaded to Gaia archive.
 
@@ -577,9 +569,8 @@ i.e.: *user_<your_login_name>.<table_name>*)::
   >>> job = Gaia.launch_job(query=query)
   >>> results = job.get_results()
 
-
 2.3.2. Uploading table from file
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 A file containing a table (votable, fits or csv) can be uploaded to the user private area.
 
@@ -605,9 +596,8 @@ i.e.: *user_<your_login_name>.<table_name>*)::
   >>> job = Gaia.launch_job(query=query)
   >>> results = job.get_results()
 
-
 2.3.3. Uploading table from an astropy Table
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 A in memory PyTable (See https://wiki.python.org/moin/PyTables) can be uploaded to the user private area.
 
@@ -633,10 +623,8 @@ i.e.: *user_<your_login_name>.<table_name>*)::
   >>> job = Gaia.launch_job(query=query)
   >>> results = job.get_results()
 
-
-
 2.3.4. Uploading table from job
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The results generated by an *asynchronous* job (from a query executed in the Gaia archive) can be
 ingested in a table in the user private area.
@@ -659,7 +647,7 @@ i.e.: *user_<your_login_name>.t<job_id>*)::
   >>> results = job.get_results()
 
 2.4. Deleting table
-~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^
 
 A table from the user private area can be deleted as follows::
 
@@ -668,9 +656,8 @@ A table from the user private area can be deleted as follows::
   >>> job = Gaia.delete_user_table("table_test_from_file")
   Table 'table_test_from_file' deleted.
 
-
 2.5. Updating table metadata
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 It can be useful for the user to modify the metadata of a given table. For example, a user
 might want to change the description (UCD) of a column, or the flags that give extra information
@@ -692,8 +679,8 @@ The metadata parameter to be changed can be 'utype', 'ucd', 'flags' or 'indexed'
 
 * value for 'indexed' is a boolean indicating whether the column is indexed or not.
 
-.. _UCD: http://www.ivoa.net/documents/latest/UCD.html
-.. _UTypes: http://www.ivoa.net/documents/Notes/UTypesUsage/index.html
+.. _UCD: https//www.ivoa.net/documents/latest/UCD.html
+.. _UTypes: https//www.ivoa.net/documents/Notes/UTypesUsage/index.html
 
 For instance, the 'ra' column in the gaiadr2.gaia_source catalogue is specified as::
 
@@ -733,7 +720,7 @@ We can type the following::
   Table 'user_joe.table' updated.
 
 2.6. Cross match
-~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^
 
 It is possible to run a geometric cross-match between the RA/Dec coordinates of two tables
 using the crossmatch function provided by the archive. In order to do so the user must be
@@ -773,16 +760,15 @@ Once you have your cross match finished, you can obtain the results::
 
 Cross-matching catalogues is one of the most popular operations executed in the Gaia archive.
 
-
 2.7. Tables sharing
-~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^
 
 It is possible to share tables with other users. You have to create a group, populate that
 group with users, and share your table to that group. Then, any user belonging to that group
 will be able to access to your shared table in a query.
 
 2.7.1. Creating a group
-~~~~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^^^^
 
 .. code-block:: python
 
@@ -791,7 +777,7 @@ will be able to access to your shared table in a query.
   >>> Gaia.share_group_create(group_name="my_group", description="description")
 
 2.7.2. Removing a group
-~~~~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^^^^
 
 .. code-block:: python
 
@@ -800,7 +786,7 @@ will be able to access to your shared table in a query.
   >>> Gaia.share_group_delete(group_name="my_group")
 
 2.7.3. Listing groups
-~~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^^
 
 .. code-block:: python
 
@@ -811,7 +797,7 @@ will be able to access to your shared table in a query.
   ...     print(group.title)
 
 2.7.4. Adding users to a group
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. code-block:: python
 
@@ -820,7 +806,7 @@ will be able to access to your shared table in a query.
   >>> Gaia.share_group_add_user(group_name="my_group",user_id="<user_login_name")
 
 2.7.5. Removing users from a group
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. code-block:: python
 
@@ -828,9 +814,8 @@ will be able to access to your shared table in a query.
   >>> Gaia.login()
   >>> Gaia.share_group_delete_user(group_name="my_group",user_id="<user_login_name>")
 
-
 2.7.6. Sharing a table to a group
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. code-block:: python
 
@@ -840,15 +825,48 @@ will be able to access to your shared table in a query.
   ...                  table_name="user_<user_login_name>.my_table",
   ...                  description="description")
 
-
 2.7.7. Stop sharing a table
-~~~~~~~~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. code-block:: python
 
   >>> from astroquery.gaia import Gaia
   >>> Gaia.login()
   >>> Gaia.share_table_stop(table_name="user_<user_login_name>.my_table", group_name="my_group")
+
+
+3. Datalink service (Public and Authenticated)
+----------------------------------------------
+
+DataLink_ is a data access protocol compliant with the IVOA_ architecture that provides a linking mechanism between
+datasets offered by different services. In practice, it can be seen and used as a web service providing the list of additional
+data products available for each object outside the main catalogue(s). For more information about the products served via
+DataLink in the Gaia ESA Archive we recommend to read the Archive DataLink tutorials available at https://www.cosmos.esa.int/web/gaia-users/archive/datalink-products.
+
+The DataLink products are publicly accessible via the `~astroquery.gaia.GaiaClass.load_data` method.
+The following example shows how to retrieve the DataLink products associated with three sources in Gaia DR3 as a python dictionary:
+
+
+.. doctest-remote-data::
+
+  >>> retrieval_type = 'ALL'          # Options are: 'EPOCH_PHOTOMETRY', 'MCMC_GSPPHOT', 'MCMC_MSC', 'XP_SAMPLED', 'XP_CONTINUOUS', 'RVS', 'ALL'
+  >>> data_structure = 'COMBINED'     # Options are: 'INDIVIDUAL', 'COMBINED', 'RAW'
+  >>> data_release   = 'Gaia DR3'     # Options are: 'Gaia DR3' (default), 'Gaia DR2'
+  >>> datalink = Gaia.load_data(ids=[2263166706630078848, 2263178457660566784, 2268372099615724288],
+  ...                           data_release=data_release, retrieval_type=retrieval_type, data_structure=data_structure)
+  >>> datalink.keys()
+  dict_keys(['MCMC_GSPPHOT_COMBINED.xml', 'EPOCH_PHOTOMETRY_COMBINED.xml', 'RVS_COMBINED.xml', 'MCMC_MSC_COMBINED.xml', 'XP_SAMPLED_COMBINED.xml', 'XP_CONTINUOUS_COMBINED.xml'])
+
+
+.. Note::
+
+   It is not possible to search for and retrieve the DataLink products
+   associated to more than 5000 sources in one and the same call.
+   However, it is possible to overcome this limit programmatically using a
+   sequential download, as explained in this tutorial_.
+
+.. _tutorial: https://www.cosmos.esa.int/web/gaia-users/archive/datalink-products#datalink_jntb_get_above_lim
+.. _DataLink: https://www.ivoa.net/documents/DataLink/
 
 
 Reference/API

@@ -12,7 +12,7 @@ import platform
 import requests
 import textwrap
 
-from datetime import datetime, timedelta
+from datetime import datetime, timezone, timedelta
 from pathlib import Path
 
 from astropy.config import paths
@@ -21,11 +21,13 @@ from astropy.utils.console import ProgressBarOrSpinner
 import astropy.utils.data
 from astropy.utils import deprecated
 
+import pyvo
+
 from astroquery import version, log, cache_conf
 from astroquery.utils import system_tools
 
 
-__all__ = ['BaseQuery', 'QueryWithLogin']
+__all__ = ['BaseVOQuery', 'BaseQuery', 'QueryWithLogin']
 
 
 def to_cache(response, cache_file):
@@ -117,8 +119,8 @@ class AstroQuery:
             if cache_timeout is None:
                 expired = False
             else:
-                current_time = datetime.utcnow()
-                cache_time = datetime.utcfromtimestamp(request_file.stat().st_mtime)
+                current_time = datetime.now(timezone.utc)
+                cache_time = datetime.fromtimestamp(request_file.stat().st_mtime, timezone.utc)
                 expired = current_time-cache_time > timedelta(seconds=cache_timeout)
             if not expired:
                 with open(request_file, "rb") as f:
@@ -175,6 +177,33 @@ class LoginABCMeta(abc.ABCMeta):
         return newcls
 
 
+class BaseVOQuery:
+    """
+    Bare minimum base query that sets the Session header to include both astroquery and pyvo.
+    Use in modules that rely on PyVO, either on its own or in combination with ``BaseQuery`` (be mindful
+    about resolution order of base classes!).
+    """
+    def __init__(self):
+        super().__init__()
+        if not hasattr(self, '_session'):
+            # We don't want to override another, e.g. already authenticated session from another baseclass
+            self._session = requests.Session()
+
+        user_agents = self._session.headers['User-Agent'].split()
+        if 'astroquery' in user_agents[0]:
+            if 'pyVO' not in user_agents[1]:
+                user_agents[0] = f"astroquery/{version.version} pyVO/{pyvo.__version__}"
+        elif 'pyVO' in user_agents[0]:
+            user_agents[0] = f"astroquery/{version.version} pyVO/{pyvo.__version__}"
+        else:
+            user_agents = [f"astroquery/{version.version} pyVO/{pyvo.__version__} "
+                           f"Python/{platform.python_version()} ({platform.system()})"] + user_agents
+
+        self._session.headers['User-Agent'] = " ".join(user_agents)
+
+        self.name = self.__class__.__name__.split("Class")[0]
+
+
 class BaseQuery(metaclass=LoginABCMeta):
     """
     This is the base class for all the query classes in astroquery. It
@@ -182,11 +211,11 @@ class BaseQuery(metaclass=LoginABCMeta):
     """
 
     def __init__(self):
-        S = self._session = requests.Session()
+        self._session = requests.Session()
         self._session.hooks['response'].append(self._response_hook)
-        S.headers['User-Agent'] = (
+        self._session.headers['User-Agent'] = (
             f"astroquery/{version.version} Python/{platform.python_version()} ({platform.system()}) "
-            f"{S.headers['User-Agent']}")
+            f"{self._session.headers['User-Agent']}")
 
         self.name = self.__class__.__name__.split("Class")[0]
         self._cache_location = None
@@ -287,7 +316,7 @@ class BaseQuery(metaclass=LoginABCMeta):
             Optional, if specified, overrides global cache settings.
         verify : bool
             Verify the server's TLS certificate?
-            (see http://docs.python-requests.org/en/master/_modules/requests/sessions/?highlight=verify)
+            (see https://docs.python-requests.org/en/master/_modules/requests/sessions/?highlight=verify)
         continuation : bool
             If the file is partly downloaded to the target location, this
             parameter will try to continue the download where it left off.

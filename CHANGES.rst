@@ -4,6 +4,16 @@
 New Tools and Services
 ----------------------
 
+eso
+^^^
+
+- Authenticate with ESO using APIs and tokens instead of HTML forms. [#2681]
+- Discontinue usage of old Request Handler for dataset retrieval in favor of new dataportal API. [#2681]
+- Local reimplementation of astroquery's ``_download_file`` to fix some issues and avoid sending a HEAD request
+  just to get the original filename. [#1580]
+- Restore support for .Z files. [#1818]
+- Update tests and documentation.
+
 ipac.irsa
 ^^^^^^^^^
 
@@ -22,6 +32,17 @@ gaia
 - TAP notifications service is now available for Gaia. If there is notification for the users,
   for example planned or our unplanned downtimes of the archive, etc. The notification
   will be also visible when accessing the archive through Astroquery. [#2376]
+
+- Datalink can be used with the new parameter linking_parameter. It provides an additional
+  meaning to the source identifiers: source_id, transit_id and image_id.
+  This parameter is optional, in order to be backward compatible, and
+  therefore, if the parameter is not set, the source identifiers are
+  considered as source_id. [#2859]
+
+- New output formats. votable, to get an uncompressed votable file (Content-Type: application/x-votable+xml).
+  new votable_gzip (which is now the default), to get a compressed votable file (Content-Encoding: gzip and Content-Type: application/x-votable+gzip).
+  ecsv, to get an ecsv compressed file (Content-Encoding: gzip and Content-Type: text/ecsv+gzip). [#2907]
+
 
 hsa
 ^^^
@@ -74,6 +95,11 @@ esa.hubble
 - Method query_hst_tap has been deprecated and is replaced with query_tap, with the same arguments. [#2597]
 - Product types in download_product method have been modified to: PRODUCT, SCIENCE_PRODUCT or POSTCARD. [#2597]
 - Added ``proposal`` keyword argument to several methods now allows to filter by Proposal ID. [#2797]
+
+esa.jwt
+^^^^^^^
+
+- Fixes in ``login`` and ``set_token`` methods. [#2807]
 
 alma
 ^^^^
@@ -200,11 +226,16 @@ mast
 
 - Resolved issue making PANSTARRS catalog queries when columns and sorting is specified. [#2727]
 
+- Updating documentation to address the difference between ``obsid`` and ``obs_id`` database fields. [#2857]
+
+- Bug fix in ``Observations.query_criteria()`` to use ``page`` and ``pagesize`` parameters [#2915]
+
 nist
 ^^^^
 
-- Vectoized ``linename`` option to query multiple spectral lines with one call
+- Vectorized ``linename`` option to query multiple spectral lines with one call
   of ``Nist.query``. [#2678]
+- Fix wavelength keywords, which were changed upstream [#2918]
 
 oac
 ^^^
@@ -218,8 +249,8 @@ sdss
 - Switching to https to avoid issues originating in relying on server side
   redirects. [#2654]
 
-- Fix bug to have object IDs as integers on windows. [#2800, #2806]
-
+- Fix bug to have object IDs as unsigned integers, on Windows, too. [#2800,
+  #2806, #2879]
 
 simbad
 ^^^^^^
@@ -250,6 +281,13 @@ svo_fps
 
 - The default wavelength range used by ``get_filter_index()`` was far too
   large. The user must now always specify both upper and lower limits. [#2509]
+
+vizier
+^^^^^^
+
+- A new method ``astroquery.vizier.VizierClass.get_catalog_metadata`` allows to retrieve
+  information about VizieR catalogs such as origin_article, description, or last modified
+  date. [#2878]
 
 xmatch
 ^^^^^^
@@ -296,7 +334,9 @@ Infrastructure, Utility and Other Changes and Additions
 - New function, ``utils.cleanup_downloads.cleanup_saved_downloads``, is
   added to help the testcleanup narrative in narrative documentations. [#2384]
 
-- Adding more system information to User-Agent. [#2762]
+- Adding new ``BaseVOQuery`` baseclass for modules using VO tools. [#2836]
+
+- Adding more system and package information to User-Agent. [#2762, #2836]
 
 - Removal of the non-functional ``nrao`` module as it was completely
   incompatible with the refactored upstream API. [#2546]
@@ -307,6 +347,9 @@ Infrastructure, Utility and Other Changes and Additions
 - Removed deprecated function ``utils.commons.send_request()``. [#2583]
 
 - Removed deprecated function ``utils.download_list_of_fitsfiles()``. [#2594]
+
+- Deprecation of the module ``ipac.irsa.sha`` due to upstream API changes
+  and in favour of recommending using ``ipac.irsa`` instead. [#2924]
 
 - Versions of astropy <4.2.1 and numpy <1.18 are no longer supported. [#2602]
 
@@ -382,6 +425,8 @@ mast
   methods of ``Catalogs``. [#2279]
 
 - Optional keyword arguments are now keyword only. [#2317]
+
+- PanSTARRS data is now available to download anonymously from the public STScI S3 buckets. [#2893]
 
 sdss
 ^^^^

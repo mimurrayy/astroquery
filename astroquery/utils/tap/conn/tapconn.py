@@ -208,7 +208,7 @@ class TapConn:
         An HTTP(s) response object
         """
         context = self.__get_data_context(query)
-        return self.__execute_get(context, verbose)
+        return self.__execute_get(context, verbose=verbose)
 
     def execute_datalinkget(self, subcontext, query, *, verbose=False):
         """Executes a datalink GET request
@@ -228,8 +228,8 @@ class TapConn:
         -------
         An HTTP(s) response object
         """
-        context = self.__get_datalink_context(subcontext, query)
-        return self.__execute_get(context, verbose)
+        context = self.__get_datalink_context(subcontext, encodedData=query)
+        return self.__execute_get(context, verbose=verbose)
 
     def __execute_get(self, context, *, verbose=False):
         conn = self.__get_connection(verbose=verbose)
@@ -587,11 +587,14 @@ class TapConn:
             if p >= 0:
                 filename = os.path.basename(content_disposition[p+10:len(content_disposition)-1])
                 content_encoding = self.find_header(headers, 'Content-Encoding')
+
                 if content_encoding is not None:
-                    if "gzip" == content_encoding.lower():
-                        filename += ".gz"
-                    elif "zip" == content_encoding.lower():
-                        filename += ".zip"
+                    if not (filename.endswith('.gz') or filename.endswith('.zip')):
+                        if "gzip" == content_encoding.lower():
+                            filename += ".gz"
+                        elif "zip" == content_encoding.lower():
+                            filename += ".zip"
+
                 return filename
         return None
 

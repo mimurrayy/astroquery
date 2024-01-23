@@ -178,7 +178,7 @@ def test_load_data(monkeypatch, tmp_path):
         assert params_dict == {
             "VALID_DATA": "true",
             "ID": "1,2,3,4",
-            "FORMAT": "votable",
+            "FORMAT": "votable_gzip",
             "RETRIEVAL_TYPE": "epoch_photometry",
             "DATA_STRUCTURE": "INDIVIDUAL",
             "USE_ZIP_ALWAYS": "true"}
@@ -190,6 +190,31 @@ def test_load_data(monkeypatch, tmp_path):
     GAIA_QUERIER.load_data(
         ids="1,2,3,4",
         retrieval_type="epoch_photometry",
+        valid_data=True,
+        verbose=True,
+        output_file=tmp_path / "output_file")
+
+
+def test_load_data_linking_parameter(monkeypatch, tmp_path):
+
+    def load_data_monkeypatched(self, params_dict, output_file, verbose):
+        assert params_dict == {
+            "VALID_DATA": "true",
+            "ID": "1,2,3,4",
+            "FORMAT": "votable_gzip",
+            "RETRIEVAL_TYPE": "epoch_photometry",
+            "DATA_STRUCTURE": "INDIVIDUAL",
+            "LINKING_PARAMETER": "TRANSIT_ID",
+            "USE_ZIP_ALWAYS": "true"}
+        assert output_file == str(tmp_path / "output_file")
+        assert verbose is True
+
+    monkeypatch.setattr(TapPlus, "load_data", load_data_monkeypatched)
+
+    GAIA_QUERIER.load_data(
+        ids="1,2,3,4",
+        retrieval_type="epoch_photometry",
+        linking_parameter="TRANSIT_ID",
         valid_data=True,
         verbose=True,
         output_file=tmp_path / "output_file")

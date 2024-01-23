@@ -164,7 +164,7 @@ All query tools allow coordinate-based queries:
                         ...           ... ...                 ...              ...
     2MASS J05353573-0525256 05 35 35.7755 ... 2020yCat.1350....0G                1
                V* V2114 Ori 05 35 01.6720 ... 2020yCat.1350....0G                1
-    Length = 3273 rows
+    Length = 3272 rows
 
 For additional guidance and examples, read the documentation for the individual services below.
 
@@ -296,7 +296,6 @@ These others are functional, but do not follow a common & consistent API:
   ogle/ogle.rst
   open_exoplanet_catalogue/open_exoplanet_catalogue.rst
   sdss/sdss.rst
-  ipac/irsa/sha/sha.rst
 
 There are also subpackages that serve as the basis of others.
 
@@ -334,7 +333,6 @@ for each source)
   open_exoplanet_catalogue/open_exoplanet_catalogue.rst
   sdss/sdss.rst
   simbad/simbad.rst
-  ipac/irsa/sha/sha.rst
   ukidss/ukidss.rst
   vizier/vizier.rst
   vo_conesearch/vo_conesearch.rst
@@ -370,7 +368,6 @@ generally return a table listing the available data first.
   nvas/nvas.rst
   sdss/sdss.rst
   skyview/skyview.rst
-  ipac/irsa/sha/sha.rst
   ukidss/ukidss.rst
   vsa/vsa.rst
 
