@@ -127,7 +127,7 @@ class NistLevelsClass(BaseQuery):
         """
 
         pre_re = re.compile("<PRE>(.*)</PRE>", flags=re.DOTALL)
-        links_re = re.compile(r"<a.*?>\s*(\w+)\s*</a>")
+        links_re = re.compile(r"<\/?a(.|\n)*?>")
         content = str(response.text)
 
         try:
