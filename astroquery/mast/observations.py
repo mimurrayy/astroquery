@@ -69,7 +69,7 @@ class ObservationsClass(MastQueryWithLogin):
 
     def list_missions(self):
         """
-        Lists data missions archived by MAST and avaiable through `astroquery.mast`.
+        Lists data missions archived by MAST and available through `astroquery.mast`.
 
         Returns
         -------
@@ -141,7 +141,7 @@ class ObservationsClass(MastQueryWithLogin):
             not given) or a string, and filter_set is list of filters dictionaries.
         """
 
-        # Seperating any position info from the rest of the filters
+        # Separating any position info from the rest of the filters
         coordinates = criteria.pop('coordinates', None)
         objectname = criteria.pop('objectname', None)
         radius = criteria.pop('radius', 0.2*u.deg)
@@ -199,7 +199,7 @@ class ObservationsClass(MastQueryWithLogin):
         response : list of `~requests.Response`
         """
 
-        # Put coordinates and radius into consistant format
+        # Put coordinates and radius into consistent format
         coordinates = commons.parse_coordinates(coordinates)
 
         # if radius is just a number we assume degrees
@@ -258,7 +258,7 @@ class ObservationsClass(MastQueryWithLogin):
             E.g. when using a slow internet connection.
         page : int, optional
             Can be used to override the default behavior of all results being returned to obtain
-            one sepcific page of results.
+            one specific page of results.
         **criteria
             Criteria to apply. At least one non-positional criteria must be supplied.
             Valid criteria are coordinates, objectname, radius (as in `query_region` and `query_object`),
@@ -291,7 +291,7 @@ class ObservationsClass(MastQueryWithLogin):
             params = {"columns": "*",
                       "filters": mashup_filters}
 
-        return self._portal_api_connection.service_request_async(service, params)
+        return self._portal_api_connection.service_request_async(service, params, pagesize=pagesize, page=page)
 
     def query_region_count(self, coordinates, *, radius=0.2*u.deg, pagesize=None, page=None):
         """
@@ -351,7 +351,7 @@ class ObservationsClass(MastQueryWithLogin):
             E.g. when using a slow internet connection.
         page : int, optional
             Can be used to override the default behavior of all results being returned to obtain
-            one sepcific page of results.
+            one specific page of results.
 
         Returns
         -------
@@ -373,7 +373,7 @@ class ObservationsClass(MastQueryWithLogin):
             E.g. when using a slow internet connection.
         page : int, optional
             Can be used to override the default behavior of all results being returned to obtain
-            one sepcific page of results.
+            one specific page of results.
         **criteria
             Criteria to apply. At least one non-positional criterion must be supplied.
             Valid criteria are coordinates, objectname, radius (as in `query_region` and `query_object`),
@@ -410,7 +410,8 @@ class ObservationsClass(MastQueryWithLogin):
     def get_product_list_async(self, observations):
         """
         Given a "Product Group Id" (column name obsid) returns a list of associated data products.
-        See column documentation `here <https://masttest.stsci.edu/api/v0/_productsfields.html>`__.
+        Note that obsid is NOT the same as obs_id, and inputting obs_id values will result in
+        an error. See column documentation `here <https://masttest.stsci.edu/api/v0/_productsfields.html>`__.
 
         Parameters
         ----------
@@ -780,8 +781,7 @@ class ObservationsClass(MastQueryWithLogin):
         if self._cloud_connection is None:
             raise RemoteServiceError(
                 'Please enable anonymous cloud access by calling `enable_cloud_dataset` method. '
-                'See MAST Labs documentation for an example: '
-                'https://mast-labs.stsci.io/#example-data-access-with-astroquery-observations')
+                'Refer to `~astroquery.mast.ObservationsClass.enable_cloud_dataset` documentation for more info.')
 
         # Remove duplicate products
         data_products = self._remove_duplicate_products(data_products)
@@ -817,8 +817,7 @@ class ObservationsClass(MastQueryWithLogin):
         if self._cloud_connection is None:
             raise RemoteServiceError(
                 'Please enable anonymous cloud access by calling `enable_cloud_dataset` method. '
-                'See MAST Labs documentation for an example: '
-                'https://mast-labs.stsci.io/#example-data-access-with-astroquery-observations')
+                'Refer to `~astroquery.mast.ObservationsClass.enable_cloud_dataset` documentation for more info.')
 
         # Query for product URIs
         return self._cloud_connection.get_cloud_uri(data_product, include_bucket, full_url)
@@ -853,7 +852,7 @@ class MastClass(MastQueryWithLogin):
     """
     MAST query class.
 
-    Class that allows direct programatic access to the MAST Portal,
+    Class that allows direct programmatic access to the MAST Portal,
     more flexible but less user friendly than `ObservationsClass`.
     """
 
@@ -880,7 +879,7 @@ class MastClass(MastQueryWithLogin):
     @class_or_instance
     def service_request_async(self, service, params, *, pagesize=None, page=None, **kwargs):
         """
-        Given a Mashup service and parameters, builds and excecutes a Mashup query.
+        Given a Mashup service and parameters, builds and executes a Mashup query.
         See documentation `here <https://mast.stsci.edu/api/v0/class_mashup_1_1_mashup_request.html>`__
         for information about how to build a Mashup request.
 

@@ -10,11 +10,11 @@ European Space Agency (ESA)
 """
 import re
 import shutil
-import cgi
 from pathlib import Path
-import tarfile
+import tarfile as esatar
 import os
 import configparser
+from email.message import Message
 
 from astropy.io import fits
 from astroquery import log
@@ -27,6 +27,12 @@ from ...query import BaseQuery, QueryWithLogin
 
 
 __all__ = ['XMMNewton', 'XMMNewtonClass']
+
+
+# We do trust the ESA tar files, this is to avoid the new to Python 3.12 deprecation warning
+# https://docs.python.org/3.12/library/tarfile.html#tarfile-extraction-filter
+if hasattr(esatar, "fully_trusted_filter"):
+    esatar.TarFile.extraction_filter = staticmethod(esatar.fully_trusted_filter)
 
 
 class XMMNewtonClass(BaseQuery):
@@ -182,8 +188,8 @@ class XMMNewtonClass(BaseQuery):
         if filename is None:
             response = self._request('HEAD', link)
             response.raise_for_status()
-            filename = re.findall('filename="(.+)"', response.headers[
-                "Content-Disposition"])[0]
+            filename = os.path.basename(re.findall('filename="(.+)"', response.headers[
+                "Content-Disposition"])[0])
         else:
             filename = observation_id + ".png"
 
@@ -293,7 +299,9 @@ class XMMNewtonClass(BaseQuery):
         response = self._request('HEAD', link, save=False, cache=cache)
         # Get original extension
         if 'Content-Type' in response.headers and 'text' not in response.headers['Content-Type']:
-            _, params = cgi.parse_header(response.headers['Content-Disposition'])
+            message = Message()
+            message["content-type"] = response.headers["Content-Disposition"]
+            params = dict(message.get_params()[1:])
         elif response.status_code == 401:
             error = "Data protected by proprietary rights. Please check your credentials"
             raise LoginError(error)
@@ -316,7 +324,7 @@ class XMMNewtonClass(BaseQuery):
 
     def _create_filename(self, filename, observation_id, suffixes):
         if filename is not None:
-            filename = os.path.splitext(filename)[0]
+            filename = os.path.basename(os.path.splitext(filename)[0])
         else:
             filename = observation_id
         filename += "".join(suffixes)
@@ -404,7 +412,7 @@ class XMMNewtonClass(BaseQuery):
         if path != "" and os.path.exists(path):
             _path = path
         try:
-            with tarfile.open(filename, "r") as tar:
+            with esatar.open(filename, "r") as tar:
                 ret = {}
                 for member in tar.getmembers():
                     paths = os.path.split(member.name)
@@ -550,7 +558,7 @@ class XMMNewtonClass(BaseQuery):
                     log.warning("Invalid instrument %s" % inst)
                     instrument.remove(inst)
         try:
-            with tarfile.open(filename, "r") as tar:
+            with esatar.open(filename, "r") as tar:
                 ret = {}
                 for member in tar.getmembers():
                     paths = os.path.split(member.name)
@@ -726,7 +734,7 @@ class XMMNewtonClass(BaseQuery):
             _path = path
 
         try:
-            with tarfile.open(filename, "r") as tar:
+            with esatar.open(filename, "r") as tar:
                 ret = {}
                 for member in tar.getmembers():
                     paths = os.path.split(member.name)

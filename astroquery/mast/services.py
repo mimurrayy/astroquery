@@ -83,7 +83,7 @@ def _json_to_table(json_obj, data_key='data'):
         if ignore_value is not None:
             col_data[np.where(np.equal(col_data, None))] = ignore_value
 
-        # no consistant way to make the mask because np.equal fails on ''
+        # no consistent way to make the mask because np.equal fails on ''
         # and array == value fails with None
         if col_type == 'str':
             col_mask = (col_data == ignore_value)
@@ -99,9 +99,9 @@ def _json_to_table(json_obj, data_key='data'):
 @async_to_sync
 class ServiceAPI(BaseQuery):
     """
-    MAST microservice API calss.
+    MAST microservice API calls.
 
-    Class that allows direct programatic access to MAST microservice APIs.
+    Class that allows direct programmatic access to MAST microservice APIs.
     Should be used to facilitate all microservice API queries.
     """
 
@@ -224,7 +224,7 @@ class ServiceAPI(BaseQuery):
     @class_or_instance
     def service_request_async(self, service, params, page_size=None, page=None, use_json=False, **kwargs):
         """
-        Given a MAST fabric service and parameters, builds and excecutes a fabric microservice catalog query.
+        Given a MAST fabric service and parameters, builds and executes a fabric microservice catalog query.
         See documentation `here <https://catalogs.mast.stsci.edu/docs/index.html>`__
         for information about how to build a MAST catalogs microservice  request.
 
@@ -288,7 +288,27 @@ class ServiceAPI(BaseQuery):
             catalogs_request.extend(self._build_catalogs_params(params))
         else:
             headers['Content-Type'] = 'application/json'
-            catalogs_request = params
+
+            # Parameter syntax needs to be updated only for PANSTARRS catalog queries
+            if service.lower() == 'panstarrs':
+                catalogs_request.extend(self._build_catalogs_params(params))
+
+                # After parameter syntax is updated, revert back to dictionary
+                # so params can be passed as a JSON dictionary
+                params_dict = {}
+                for key, val in catalogs_request:
+                    params_dict.setdefault(key, []).append(val)
+                catalogs_request = params_dict
+
+                # Removing single-element lists. Single values will live on their own (except for `sort_by`)
+                for key in catalogs_request.keys():
+                    if (key != 'sort_by') & (len(catalogs_request[key]) == 1):
+                        catalogs_request[key] = catalogs_request[key][0]
+
+            # Otherwise, catalogs_request can remain as the original params dict
+            else:
+                catalogs_request = params
+
         response = self._request('POST', request_url, data=catalogs_request, headers=headers, use_json=use_json)
         return response
 

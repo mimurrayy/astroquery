@@ -4,7 +4,6 @@
 import html
 import re
 
-import astropy.units as u
 import astropy.io.ascii as asciitable
 
 from ..query import BaseQuery

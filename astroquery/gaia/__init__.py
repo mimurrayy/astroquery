@@ -4,14 +4,8 @@
 Gaia TAP plus
 =============
 
-@author: Juan Carlos Segovia
-@contact: juan.carlos.segovia@sciops.esa.int
-
 European Space Astronomy Centre (ESAC)
 European Space Agency (ESA)
-
-Created on 30 jun. 2016
-
 
 """
 from astropy import config as _config
@@ -36,7 +30,12 @@ class Conf(_config.ConfigNamespace):
                                       'XP_SAMPLED',
                                       'RVS',
                                       'MCMC_GSPPHOT',
-                                      'MCMC_MSC']
+                                      'MCMC_MSC',
+                                      'EPOCH_ASTROMETRY',
+                                      'RV_EPOCH_SINGLE',
+                                      'RV_EPOCH_DOUBLE',
+                                      'RVS_EPOCH',
+                                      'RVS_TRANSIT']
 
 
 conf = Conf()

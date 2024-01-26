@@ -32,11 +32,11 @@ releases are automatically uploaded to `PyPI <https://pypi.org/project/astroquer
 and therefore the latest version of astroquery can be pip installed.
 The version number of these automated releases contain the ``'dev'`` tag, thus pip needs to be told
 to look for these releases during an upgrade, using the ``--pre`` install option. If astroquery is
-already installed, please make sure you use the ``--upgrade`` install option as well.
+already installed, please make sure you use the ``--upgrade`` (or ``-U``) install option as well.
 
 .. code-block:: bash
 
-    $ pip install --pre astroquery
+    $ python -m pip install -U --pre astroquery
 
 To install all the mandatory and optional dependencies add the ``[all]``
 identifyer to the pip command above (or use ``[docs]`` or ``[test]`` for the
@@ -44,7 +44,7 @@ dependencies required to build the documentation or run the tests):
 
 .. code-block:: bash
 
-    $ pip install --pre astroquery[all]
+    $ python -m pip install -U --pre astroquery[all]
 
 In addition to the automated releases, we also keep doing regular, tagged version for maintenance
 and packaging purposes. These can be ``pip`` installed without the ``--pre`` option and
@@ -74,7 +74,7 @@ The development version can be obtained and installed from github:
     $ # If you do not:
     $ git clone https://github.com/astropy/astroquery.git
     $ cd astroquery
-    $ pip install .
+    $ python -m pip install .
 
 
 To install all the optional dependencies (listed below), add the option
@@ -89,7 +89,7 @@ building the documentation, in editable mode:
 
 .. code-block:: bash
 
-    $ pip install -e .[all,test,docs]
+    $ python -m pip install -e .[all,test,docs]
 
 
 Requirements
@@ -114,7 +114,7 @@ and for running the tests:
 * `pytest-rerunfailures <https://github.com/pytest-dev/pytest-rerunfailures>`__
 
 The following packages are optional dependencies and are required for the
-full functionality of the `~astroquery.cds` module:
+full functionality of the `~astroquery.mocserver`, `~astroquery.alma`, and `~astroquery.xmatch` modules:
 
 * `astropy-healpix <http://astropy-healpix.readthedocs.io/en/latest/>`_
 * `regions <https://astropy-regions.readthedocs.io/en/latest/>`_
@@ -123,7 +123,7 @@ full functionality of the `~astroquery.cds` module:
 For the `~astroquery.vamdc` module:
 
 * `vamdclib <https://github.com/VAMDC/vamdclib/>`_  install version from
-  personal fork: ``pip install git+https://github.com/keflavich/vamdclib-1.git``
+  personal fork: ``python -m pip install git+https://github.com/keflavich/vamdclib-1.git``
 
 The following packages are optional dependencies and are required for the
 full functionality of the `~astroquery.mast` module:
@@ -141,10 +141,10 @@ queries based on coordinates or object names.  Some simple examples, using SIMBA
     >>> from astroquery.simbad import Simbad
     >>> result_table = Simbad.query_object("m1")
     >>> result_table.pprint()
-    MAIN_ID    RA      DEC    ... COO_WAVELENGTH COO_BIBCODE SCRIPT_NUMBER_ID
-            "h:m:s"  "d:m:s"  ...
-    ------- -------- -------- ... -------------- ----------- ----------------
-      M   1 05 34 32 +22 00.8 ...              R                            1
+    MAIN_ID     RA        DEC    ...    COO_BIBCODE      SCRIPT_NUMBER_ID
+             "h:m:s"    "d:m:s"  ...
+    ------- ---------- --------- ... ------------------- ----------------
+      M   1 05 34 30.9 +22 00 53 ... 1995AuJPh..48..143S                1
 
 All query tools allow coordinate-based queries:
 
@@ -164,7 +164,7 @@ All query tools allow coordinate-based queries:
                         ...           ... ...                 ...              ...
     2MASS J05353573-0525256 05 35 35.7755 ... 2020yCat.1350....0G                1
                V* V2114 Ori 05 35 01.6720 ... 2020yCat.1350....0G                1
-    Length = 3273 rows
+    Length = 3272 rows
 
 For additional guidance and examples, read the documentation for the individual services below.
 
@@ -238,7 +238,6 @@ The following modules have been completed using a common API:
   besancon/besancon.rst
   cadc/cadc.rst
   casda/casda.rst
-  cds/cds.rst
   linelists/cdms/cdms.rst
   dace/dace.rst
   esa/hsa/hsa.rst
@@ -255,12 +254,14 @@ The following modules have been completed using a common API:
   heasarc/heasarc.rst
   hips2fits/hips2fits.rst
   hitran/hitran.rst
+  ipac/irsa/most.rst
   ipac/irsa/irsa_dust/irsa_dust.rst
   ipac/irsa/ibe/ibe.rst
   ipac/irsa/irsa.rst
   jplspec/jplspec.rst
   magpis/magpis.rst
   mast/mast.rst
+  mocserver/mocserver.rst
   mpc/mpc.rst
   nasa_ads/nasa_ads.rst
   ipac/ned/ned.rst
@@ -295,7 +296,6 @@ These others are functional, but do not follow a common & consistent API:
   ogle/ogle.rst
   open_exoplanet_catalogue/open_exoplanet_catalogue.rst
   sdss/sdss.rst
-  ipac/irsa/sha/sha.rst
 
 There are also subpackages that serve as the basis of others.
 
@@ -333,7 +333,6 @@ for each source)
   open_exoplanet_catalogue/open_exoplanet_catalogue.rst
   sdss/sdss.rst
   simbad/simbad.rst
-  ipac/irsa/sha/sha.rst
   ukidss/ukidss.rst
   vizier/vizier.rst
   vo_conesearch/vo_conesearch.rst
@@ -369,7 +368,6 @@ generally return a table listing the available data first.
   nvas/nvas.rst
   sdss/sdss.rst
   skyview/skyview.rst
-  ipac/irsa/sha/sha.rst
   ukidss/ukidss.rst
   vsa/vsa.rst
 

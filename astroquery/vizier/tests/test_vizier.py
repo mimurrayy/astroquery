@@ -198,7 +198,7 @@ def test_find_resource_then_get(patch_post):
     assert next(iter(result.keys())).startswith(res.name)
 
     resultl = vizier.core.Vizier.get_catalogs([res])
-    assert type(result) == type(resultl)
+    assert isinstance(result, type(resultl))
     assert len(result) == len(resultl)
     assert len(result[0]) == len(resultl[0])
 
@@ -263,3 +263,11 @@ class TestVizierClass:
     def test_column_filters_unicode(self):
         v = vizier.core.Vizier(column_filters={u'Vmag': u'>10'})
         assert len(v.column_filters) == 1
+
+    def test_get_catalog_metadata(self):
+        v = vizier.core.Vizier(catalog="test")
+        request_dict = v.get_catalog_metadata(get_query_payload=True)
+        assert request_dict["REQUEST"] == "doQuery"
+        assert "WHERE ivoid = 'ivo://cds.vizier/test'" in request_dict["QUERY"]
+        with pytest.raises(ValueError, match="No catalog name was provided"):
+            vizier.core.Vizier().get_catalog_metadata()

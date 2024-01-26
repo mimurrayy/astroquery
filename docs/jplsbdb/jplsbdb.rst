@@ -11,7 +11,7 @@ Overview
 The :class:`~astroquery.jplsbdb.SBDBClass` class provides
 an interface to the `Small-Body Database Browser
 <https://ssd.jpl.nasa.gov/sbdb.cgi>`_ (SBDB) maintained by the `JPL
-Solar System Dynamics group <http://ssd.jpl.nasa.gov/>`_.
+Solar System Dynamics group <https://ssd.jpl.nasa.gov/>`_.
 
 The SBDB provides detailed information on a specific known small body,
 including it's orbit, close approaches with major planets, available
@@ -156,7 +156,7 @@ item:
 .. code-block:: python
 
    >>> sbdb['orbit']['moid_jup']   # doctest: +REMOTE_DATA
-   <Quantity 0.431 AU>
+   <Quantity 0.43 AU>
 
 Note that many of the items in the output dictionary are associated
 with `~astropy.units` which can be readily used for
@@ -167,7 +167,7 @@ orbit intersection distance of the target with respect to Jupiter
 .. code-block:: python
 
    >>> print(sbdb['orbit']['moid_jup'].to('km'))    # doctest: +REMOTE_DATA
-   64476682.271699995 km
+    64327084.40099999 km
 
 The vast majority of parameter names are identical to those used in
 the `SBDB API documentation
@@ -202,7 +202,7 @@ per target, but only a list of objects matching this pattern:
 .. code-block:: python
 
     >>> sbdb['list']     # doctest: +REMOTE_DATA
-    OrderedDict([('pdes', ['2018 AA4', '2018 AA12']), ('name', ['(2018 AA4)', '(2018 AA12)'])])
+    OrderedDict([('name', ['(2018 AA4)', '(2018 AA12)', '(2018 AA74)']), ('pdes', ['2018 AA4', '2018 AA12', '2018 AA74'])])
 
 Customizing your Query
 ======================
@@ -282,7 +282,7 @@ This submodule makes use of the `JPL Horizons
 <https://ssd.jpl.nasa.gov/sbdb.cgi>`_ system.
 
 The development of this submodule is funded through NASA PDART
-Grant No. 80NSSC18K0987 to the `sbpy project <http://sbpy.org>`_.
+Grant No. 80NSSC18K0987 to the `sbpy project <https://sbpy.org>`_.
 
 
 Reference/API

@@ -9,10 +9,10 @@ Overview
 
 IMCCE provides a number of Solar System-related services, two of which are currently implemented here:
 
-* `SkyBoT <http://vo.imcce.fr/webservices/skybot/>`_: search for and
+* `SkyBoT <https://ssp.imcce.fr/webservices/skybot/>`_: search for and
   identify Solar System objects that are present in a given area of
   the sky at a given time
-* `Miriade <http://vo.imcce.fr/webservices/miriade/>`_: ephemerides service
+* `Miriade <https://ssp.imcce.fr/webservices/miriade/>`_: ephemerides service
 
 Use cases for both services are detailed below.
 
@@ -24,7 +24,7 @@ Cone Search
 -----------
 
 `astroquery.imcce.SkybotClass` provides an interface to the `cone search
-<http://vo.imcce.fr/webservices/skybot/?conesearch>`_ offered by SkyBoT.
+<https://ssp.imcce.fr/webservices/skybot/api/conesearch/>`_ offered by SkyBoT.
 
 A simple cone search for Solar System objects in a circular field
 looks like this:
@@ -39,8 +39,8 @@ looks like this:
    >>> epoch = Time('2019-05-29 21:42', format='iso')
    >>> results = Skybot.cone_search(field, 5*u.arcmin, epoch)
    >>> results.pprint(max_width=80)  # doctest: +IGNORE_OUTPUT
-    Number    Name             RA          ...      vy          vz       epoch  
-                              deg          ...    AU / d      AU / d       d    
+    Number    Name             RA          ...      vy          vz       epoch
+                              deg          ...    AU / d      AU / d       d
     ------ ---------- -------------------- ... ----------- ----------- ---------
         --  2012 BO42 0.019414999999999998 ... 0.009345668 0.005003011 2458630.0
     516566  2007 DH36 0.005546249999999999 ...  0.00855646 0.002875928 2458630.0
@@ -183,32 +183,23 @@ Pallas over an entire year with a time step of 1 day:
 
    >>> from astroquery.imcce import Miriade
    >>> Miriade.get_ephemerides('Pallas', epoch='2019-01-01',
-   ...                         epoch_step='1d', epoch_nsteps=365)
-    <Table length=365>
-    target        epoch                 RA         ...   DEC_rate    delta_rate 
-                    d                  deg         ... arcsec / min    km / s   
-    str20        float64             float64       ...   float64      float64   
-    ------ -------------------- ------------------ ... ------------ ------------
-    Pallas            2458484.5 200.58650874999998 ...      0.15854  -19.3678463
-    Pallas            2458485.5 200.92693874999998 ...      0.16727  -19.4137948
-    Pallas            2458486.5  201.2641095833333 ...      0.17613  -19.4552689
-    Pallas            2458487.5       201.59795375 ...      0.18511  -19.4921153
-    Pallas            2458488.5  201.9284045833333 ...      0.19421  -19.5242013
-    Pallas            2458489.5 202.25539499999996 ...      0.20344  -19.5514142
-    Pallas            2458490.5 202.57885874999997 ...      0.21278  -19.5736602
-    Pallas            2458491.5 202.89872916666664 ...      0.22224  -19.5908624
-    Pallas            2458492.5 203.21494124999998 ...      0.23181  -19.6029579
-       ...                  ...                ... ...          ...          ...
-    Pallas            2458839.5  259.6145529166667 ...    0.0069182   -1.4120214
-    Pallas            2458840.5  259.9944454166666 ...     0.011429   -1.6321428
-    Pallas            2458841.5 260.37380541666664 ...     0.015948     -1.85224
-    Pallas            2458842.5 260.75260416666663 ...     0.020475   -2.0721423
-    Pallas            2458843.5 261.13081083333327 ...     0.025007   -2.2916829
-    Pallas            2458844.5  261.5083958333333 ...     0.029542   -2.5107107
-    Pallas            2458845.5 261.88532958333326 ...     0.034077    -2.729099
-    Pallas            2458846.5        262.2615825 ...     0.038612    -2.946749
-    Pallas            2458847.5 262.63712708333327 ...     0.043144   -3.1635882
-    Pallas            2458848.5         263.011935 ...     0.047672   -3.3795665
+   ...                         epoch_step='1d', epoch_nsteps=365)  # doctest: +IGNORE_OUTPUT
+   <Table length=365>
+   target        epoch                 RA         ...   DEC_rate    delta_rate
+                   d                  deg         ... arcsec / min    km / s
+   str20        float64             float64       ...   float64      float64
+   ------ -------------------- ------------------ ... ------------ ------------
+   Pallas            2458484.5 200.58653041666665 ...      0.15854  -19.3678426
+   Pallas            2458485.5 200.92696041666662 ...      0.16727  -19.4137911
+   Pallas            2458486.5  201.2641308333333 ...      0.17613  -19.4552654
+   Pallas            2458487.5 201.59797541666663 ...      0.18511  -19.4921119
+   Pallas            2458488.5 201.92842624999997 ...      0.19421  -19.5241979
+      ...                  ...                ... ...          ...          ...
+   Pallas            2458844.5  261.5083995833333 ...     0.029542   -2.5107101
+   Pallas            2458845.5  261.8853333333333 ...     0.034077   -2.7290984
+   Pallas            2458846.5       262.26158625 ...     0.038612   -2.9467484
+   Pallas            2458847.5 262.63713083333334 ...     0.043144   -3.1635878
+   Pallas            2458848.5       263.01193875 ...     0.047672   -3.3795661
 
 
 The observer location is defined through the ``location`` keyword,
@@ -221,7 +212,7 @@ details).
 Coordinate Types
 ^^^^^^^^^^^^^^^^
 
-The `Miriade <http://vo.imcce.fr/webservices/miriade/>`_ system offers
+The `Miriade <https://ssp.imcce.fr/webservices/miriade/>`_ system offers
 a range of different *coordinate types* - sets of coordinates and
 properties that can be queried. In agreement with the Miriade webform
 query, the coordinate type in
@@ -468,11 +459,11 @@ Acknowledgements
 ================
 
 This submodule makes use of IMCCE's `SkyBoT
-<http://vo.imcce.fr/webservices/skybot/>`_ VO tool and the `IMCCE
+<https://ssp.imcce.fr/webservices/skybot/>`_ VO tool and the `IMCCE
 Miriade service
-<http://vo.imcce.fr/webservices/miriade/>`_. Additional information on
+<https://ssp.imcce.fr/webservices/miriade//>`_. Additional information on
 SkyBoT can be obtained from `Berthier et al. 2006
-<http://adsabs.harvard.edu/abs/2006ASPC..351..367B>`_.
+<https://adsabs.harvard.edu/abs/2006ASPC..351..367B>`_.
 
 Please consider the following notes from IMCCE:
 
@@ -480,13 +471,13 @@ Please consider the following notes from IMCCE:
   acknowledgment would be appreciated: "*This research has made use of
   IMCCE's SkyBoT VO tool*", or cite the following article
   `2006ASPC..351..367B
-  <http://adsabs.harvard.edu/abs/2006ASPC..351..367B>`_.
+  <https://adsabs.harvard.edu/abs/2006ASPC..351..367B>`_.
 * If Miriade was helpful for your research work, the following
   acknowledgment would be appreciated: "*This research has made use of
   IMCCE's Miriade VO tool*"
 
 The development of this submodule is funded through NASA PDART Grant
-No. 80NSSC18K0987 to the `sbpy project <http://sbpy.org>`_.
+No. 80NSSC18K0987 to the `sbpy project <https://sbpy.org>`_.
 
 
 Reference/API

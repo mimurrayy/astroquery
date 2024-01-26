@@ -12,7 +12,8 @@ import re
 from astroquery.utils.tap.core import TapPlus
 from astroquery.query import BaseQuery
 import shutil
-import cgi
+import os
+from email.message import Message
 from requests import HTTPError
 from pathlib import Path
 
@@ -122,9 +123,9 @@ class ISOClass(BaseQuery):
         response.raise_for_status()
 
         # Get original extension
-        _, params = cgi.parse_header(response.headers['Content-Disposition'])
-        r_filename = params["filename"]
-        suffixes = Path(r_filename).suffixes
+        message = Message()
+        message["content-type"] = response.headers["Content-Disposition"]
+        suffixes = Path(message.get_param("filename")).suffixes
 
         if filename is None:
             filename = tdt
@@ -211,8 +212,8 @@ class ISOClass(BaseQuery):
             response = self._request('HEAD', link)
             response.raise_for_status()
 
-            filename = re.findall('filename="(.+)"', response.headers[
-                "Content-Disposition"])[0]
+            filename = os.path.basename(re.findall('filename="(.+)"', response.headers[
+                "Content-Disposition"])[0])
         else:
 
             filename = filename + ".png"

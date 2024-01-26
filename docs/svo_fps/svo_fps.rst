@@ -25,7 +25,7 @@ range) can be listed with
     >>> from astroquery.svo_fps import SvoFps
     >>> index = SvoFps.get_filter_index(12_000*u.angstrom, 12_100*u.angstrom)
     >>> index.info
-    <Table length=14>
+    <Table length=15>
             name          dtype        unit
     -------------------- ------- ---------------
     FilterProfileService  object
@@ -52,7 +52,7 @@ range) can be listed with
           WavelengthPeak float64              AA
           WavelengthPhot float64              AA
                     FWHM float64              AA
-                    Fsun float64 erg s / (A cm2)
+                    Fsun float64 erg / (A s cm2)
                PhotCalID  object
                   MagSys  object
                ZeroPoint float64              Jy
@@ -61,6 +61,7 @@ range) can be listed with
            ZeroPointType  object
                AsinhSoft float64
         TrasmissionCurve  object
+
 
 If the wavelength range contains too many entries then a ``TimeoutError`` will
 occur. A smaller wavelength range might succeed, but if a large range really is
@@ -106,7 +107,7 @@ is of the same form as that from `~astroquery.svo_fps.SvoFpsClass.get_filter_ind
           WavelengthPeak float64              AA
           WavelengthPhot float64              AA
                     FWHM float64              AA
-                    Fsun float64 erg s / (A cm2)
+                    Fsun float64 erg / (A s cm2)
                PhotCalID  object
                   MagSys  object
                ZeroPoint float64              Jy

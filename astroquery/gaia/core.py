@@ -13,24 +13,24 @@ European Space Agency (ESA)
 Created on 30 jun. 2016
 Modified on 18 Ene. 2022 by mhsarmiento
 """
-import zipfile
 import os
-from datetime import datetime
 import shutil
+import zipfile
 from collections.abc import Iterable
+from datetime import datetime, timezone
 
 from astropy import units
-from astropy.coordinates import Angle
-from astropy.units import Quantity
-from astropy.io import votable
-from astropy.io import fits
-from astropy.table import Table
 from astropy import units as u
+from astropy.coordinates import Angle
+from astropy.io import fits
+from astropy.io import votable
+from astropy.table import Table
+from astropy.units import Quantity
 from requests import HTTPError
 
-from astroquery.utils.tap import TapPlus
-from astroquery.utils import commons
 from astroquery import log
+from astroquery.utils import commons
+from astroquery.utils.tap import TapPlus
 from astroquery.utils.tap import taputils
 from . import conf
 
@@ -107,11 +107,11 @@ class GaiaClass(TapPlus):
         except HTTPError:
             log.error("Error logging in TAP server")
             return
-        u = self._TapPlus__user
-        p = self._TapPlus__pwd
+        new_user = self._TapPlus__user
+        new_password = self._TapPlus__pwd
         try:
             log.info("Login to gaia data server")
-            TapPlus.login(self.__gaiadata, user=u, password=p,
+            TapPlus.login(self.__gaiadata, user=new_user, password=new_password,
                           verbose=verbose)
         except HTTPError:
             log.error("Error logging in data server")
@@ -132,11 +132,11 @@ class GaiaClass(TapPlus):
         except HTTPError:
             log.error("Error logging in TAP server")
             return
-        u = self._TapPlus__user
-        p = self._TapPlus__pwd
+        new_user = self._TapPlus__user
+        new_password = self._TapPlus__pwd
         try:
             log.info("Login to gaia data server")
-            TapPlus.login(self.__gaiadata, user=u, password=p,
+            TapPlus.login(self.__gaiadata, user=new_user, password=new_password,
                           verbose=verbose)
         except HTTPError:
             log.error("Error logging in data server")
@@ -163,10 +163,10 @@ class GaiaClass(TapPlus):
         except HTTPError:
             log.error("Error logging out data server")
 
-    def load_data(self, ids, *, data_release=None, data_structure='INDIVIDUAL',
-                  retrieval_type="ALL", valid_data=False, band=None,
-                  avoid_datatype_check=False, format="votable", output_file=None,
-                  overwrite_output_file=False, verbose=False):
+    def load_data(self, ids, *, data_release=None, data_structure='INDIVIDUAL', retrieval_type="ALL",
+                  linking_parameter='SOURCE_ID', valid_data=False, band=None, avoid_datatype_check=False,
+                  format="votable_gzip",
+                  output_file=None, overwrite_output_file=False, verbose=False):
         """Loads the specified table
         TAP+ only
 
@@ -189,8 +189,16 @@ class GaiaClass(TapPlus):
             row per sourceId
         retrieval_type : str, optional, default 'ALL' to retrieve all data  from the list of sources
             retrieval type identifier. For GAIA DR2 possible values are ['EPOCH_PHOTOMETRY']
-            For GAIA DR3, possible values are ['EPOC_PHOTOMETRY', 'RVS', 'XP_CONTINUOUS', 'XP_SAMPLED',
+            For GAIA DR3, possible values are ['EPOCH_PHOTOMETRY', 'RVS', 'XP_CONTINUOUS', 'XP_SAMPLED',
             'MCMC_GSPPHOT' or 'MCMC_MSC']
+            For GAIA DR4, possible values will be ['EPOCH_PHOTOMETRY', 'RVS', 'XP_CONTINUOUS', 'XP_SAMPLED',
+            'MCMC_GSPPHOT', 'MCMC_MSC', 'EPOCH_ASTROMETRY', 'RV_EPOCH_SINGLE', 'RV_EPOCH_DOUBLE', 'RVS_EPOCH' or
+            'RVS_TRANSIT']
+        linking_parameter : str, optional, default SOURCE_ID, valid values: SOURCE_ID, TRANSIT_ID, IMAGE_ID
+            By default, all the identifiers are considered as source_id
+            SOURCE_ID: the identifiers are considered as source_id
+            TRANSIT_ID: the identifiers are considered as transit_id
+            IMAGE_ID: the identifiers are considered as sif_observation_id
         valid_data : bool, optional, default False
             By default, the epoch photometry service returns all available data, including
             data rows where flux is null and/or the rejected_by_photometry flag is set to True.
@@ -204,8 +212,8 @@ class GaiaClass(TapPlus):
         avoid_datatype_check: boolean, optional, default False.
             By default, this value will be set to False. If it is set to 'true'
             the Datalink items tags will not be checked.
-        format : str, optional, default 'votable'
-            loading format. Other available formats are 'csv', 'ecsv','json','votable_plain' and 'fits'
+        format : str, optional, default 'votable_gzip'
+            loading format. Other available formats are 'votable', 'csv', 'ecsv','json','votable_plain' and 'fits'
         output_file : string, optional, default None
             file where the results are saved.
             If it is not provided, the http response contents are returned.
@@ -218,7 +226,7 @@ class GaiaClass(TapPlus):
         -------
         A table object
         """
-        now = datetime.now()
+        now = datetime.now(timezone.utc)
         now_formatted = now.strftime("%Y%m%d_%H%M%S")
         temp_dirname = "temp_" + now_formatted
         downloadname_formated = "download_" + now_formatted
@@ -230,7 +238,7 @@ class GaiaClass(TapPlus):
             output_file_specified = True
             output_file = os.path.abspath(output_file)
             if not overwrite_output_file and os.path.exists(output_file):
-                raise ValueError(f"{output_file} file already exists. Please use overwrite_output_file='False' to "
+                raise ValueError(f"{output_file} file already exists. Please use overwrite_output_file='True' to "
                                  f"overwrite output file.")
 
         path = os.path.dirname(output_file)
@@ -268,6 +276,14 @@ class GaiaClass(TapPlus):
         params_dict['FORMAT'] = str(format)
         params_dict['RETRIEVAL_TYPE'] = str(retrieval_type)
         params_dict['USE_ZIP_ALWAYS'] = 'true'
+
+        valid_param = {'SOURCE_ID', 'TRANSIT_ID', 'IMAGE_ID'}
+        if linking_parameter not in valid_param:
+            raise ValueError(
+                f"Invalid linking_parameter value '{linking_parameter}' (Valid values: {', '.join(valid_param)})")
+        else:
+            if linking_parameter != 'SOURCE_ID':
+                params_dict['LINKING_PARAMETER'] = linking_parameter
 
         if path != '':
             try:
@@ -360,7 +376,7 @@ class GaiaClass(TapPlus):
         return self.__gaiadata.get_datalinks(ids=ids, verbose=verbose)
 
     def __query_object(self, coordinate, *, radius=None, width=None, height=None,
-                       async_job=False, verbose=False, columns=[]):
+                       async_job=False, verbose=False, columns=()):
         """Launches a job
         TAP & TAP+
 
@@ -387,7 +403,7 @@ class GaiaClass(TapPlus):
         The job results (astropy.table).
         """
         coord = self.__getCoordInput(coordinate, "coordinate")
-        job = None
+
         if radius is not None:
             job = self.__cone_search(coord, radius, async_job=async_job,
                                      verbose=verbose, columns=columns)
@@ -439,7 +455,7 @@ class GaiaClass(TapPlus):
         return job.get_results()
 
     def query_object(self, coordinate, *, radius=None, width=None, height=None,
-                     verbose=False, columns=[]):
+                     verbose=False, columns=()):
         """Launches a job
         TAP & TAP+
 
@@ -455,7 +471,7 @@ class GaiaClass(TapPlus):
             box height
         verbose : bool, optional, default 'False'
             flag to display information about the process
-        columns: list, optional, default []
+        columns: list, optional, default ()
             if empty, all columns will be selected
 
         Returns
@@ -467,7 +483,7 @@ class GaiaClass(TapPlus):
                                    verbose=verbose, columns=columns)
 
     def query_object_async(self, coordinate, *, radius=None, width=None,
-                           height=None, verbose=False, columns=[]):
+                           height=None, verbose=False, columns=()):
         """Launches a job (async)
         TAP & TAP+
 
@@ -483,7 +499,7 @@ class GaiaClass(TapPlus):
             box height
         verbose : bool, optional, default 'False'
             flag to display information about the process
-        columns: list, optional, default []
+        columns: list, optional, default ()
             if empty, all columns will be selected
 
         Returns
@@ -499,9 +515,9 @@ class GaiaClass(TapPlus):
                       dec_column_name=MAIN_GAIA_TABLE_DEC,
                       async_job=False,
                       background=False,
-                      output_file=None, output_format="votable", verbose=False,
+                      output_file=None, output_format="votable_gzip", verbose=False,
                       dump_to_file=False,
-                      columns=[]):
+                      columns=()):
         """Cone search sorted by distance
         TAP & TAP+
 
@@ -525,13 +541,14 @@ class GaiaClass(TapPlus):
         output_file : str, optional, default None
             file name where the results are saved if dumpToFile is True.
             If this parameter is not provided, the jobid is used instead
-        output_format : str, optional, default 'votable'
-            results format
+        output_format : str, optional, default 'votable_gzip'
+            results format. Available formats are: 'votable', 'votable_plain',
+             'fits', 'csv', 'ecsv' and 'json', default is 'votable'.
         verbose : bool, optional, default 'False'
             flag to display information about the process
         dump_to_file : bool, optional, default 'False'
             if True, the results are saved in a file instead of using memory
-        columns: list, optional, default []
+        columns: list, optional, default ()
             if empty, all columns will be selected
 
         Returns
@@ -592,9 +609,9 @@ class GaiaClass(TapPlus):
                     ra_column_name=MAIN_GAIA_TABLE_RA,
                     dec_column_name=MAIN_GAIA_TABLE_DEC,
                     output_file=None,
-                    output_format="votable", verbose=False,
+                    output_format="votable_gzip", verbose=False,
                     dump_to_file=False,
-                    columns=[]):
+                    columns=()):
         """Cone search sorted by distance (sync.)
         TAP & TAP+
 
@@ -612,13 +629,14 @@ class GaiaClass(TapPlus):
         output_file : str, optional, default None
             file name where the results are saved if dumpToFile is True.
             If this parameter is not provided, the jobid is used instead
-        output_format : str, optional, default 'votable'
-            results format
+        output_format : str, optional, default 'votable_gzip'
+            results format. Available formats are: 'votable', 'votable_plain',
+             'fits', 'csv', 'ecsv' and 'json', default is 'votable'.
         verbose : bool, optional, default 'False'
             flag to display information about the process
         dump_to_file : bool, optional, default 'False'
             if True, the results are saved in a file instead of using memory
-        columns: list, optional, default []
+        columns: list, optional, default ()
             if empty, all columns will be selected
 
         Returns
@@ -642,8 +660,8 @@ class GaiaClass(TapPlus):
                           ra_column_name=MAIN_GAIA_TABLE_RA,
                           dec_column_name=MAIN_GAIA_TABLE_DEC,
                           background=False,
-                          output_file=None, output_format="votable",
-                          verbose=False, dump_to_file=False, columns=[]):
+                          output_file=None, output_format="votable_gzip",
+                          verbose=False, dump_to_file=False, columns=()):
         """Cone search sorted by distance (async)
         TAP & TAP+
 
@@ -665,12 +683,15 @@ class GaiaClass(TapPlus):
         output_file : str, optional, default None
             file name where the results are saved if dumpToFile is True.
             If this parameter is not provided, the jobid is used instead
-        output_format : str, optional, default 'votable'
-            results format
+        output_format : str, optional, default 'votable_gzip'
+            results format. Available formats are: 'votable', 'votable_plain',
+             'fits', 'csv', 'ecsv' and 'json', default is 'votable'.
         verbose : bool, optional, default 'False'
             flag to display information about the process
         dump_to_file : bool, optional, default 'False'
             if True, the results are saved in a file instead of using memory
+        columns: list, optional, default ()
+            if empty, all columns will be selected
 
         Returns
         -------
@@ -771,6 +792,9 @@ class GaiaClass(TapPlus):
             a table name without schema. The schema is set to the user one
         radius : float (arc. seconds), optional, default 1.0
             radius  (valid range: 0.1-10.0)
+        background : bool, optional, default 'False'
+            when the job is executed in asynchronous mode, this flag specifies
+            whether the execution will wait until results are available
         verbose : bool, optional, default 'False'
             flag to display information about the process
 
@@ -803,7 +827,7 @@ class GaiaClass(TapPlus):
         return self.launch_job_async(query=query,
                                      name=name,
                                      output_file=None,
-                                     output_format="votable",
+                                     output_format="votable_gzip",
                                      verbose=verbose,
                                      dump_to_file=False,
                                      background=background,
@@ -811,7 +835,7 @@ class GaiaClass(TapPlus):
                                      upload_table_name=None)
 
     def launch_job(self, query, *, name=None, output_file=None,
-                   output_format="votable", verbose=False,
+                   output_format="votable_gzip", verbose=False,
                    dump_to_file=False, upload_resource=None,
                    upload_table_name=None):
         """Launches a synchronous job
@@ -825,10 +849,10 @@ class GaiaClass(TapPlus):
         output_file : str, optional, default None
             file name where the results are saved if dumpToFile is True.
             If this parameter is not provided, the jobid is used instead
-        output_format : str, optional, default 'votable'
-            results format. Available formats are: 'votable', 'votable_plain',
-             'fits', 'csv', 'ecsv' and 'json', default is 'votable'.
-             Returned results for 'votable' and 'fits' formats are compressed
+        output_format : str, optional, default 'votable_gzip'
+            results format. Available formats are: 'votable_gzip', 'votable', 'votable_plain',
+             'fits', 'csv', 'ecsv' and 'json', default is 'votable_gzip'.
+             Returned results for 'votable_gzip', 'ecsv' and 'fits' formats are compressed
              gzip files.
         verbose : bool, optional, default 'False'
             flag to display information about the process
@@ -851,10 +875,11 @@ class GaiaClass(TapPlus):
                                   verbose=verbose,
                                   dump_to_file=dump_to_file,
                                   upload_resource=upload_resource,
-                                  upload_table_name=upload_table_name)
+                                  upload_table_name=upload_table_name,
+                                  format_with_results_compressed=('votable_gzip', 'fits', 'ecsv'))
 
     def launch_job_async(self, query, *, name=None, output_file=None,
-                         output_format="votable", verbose=False,
+                         output_format="votable_gzip", verbose=False,
                          dump_to_file=False, background=False,
                          upload_resource=None, upload_table_name=None,
                          autorun=True):
@@ -869,10 +894,10 @@ class GaiaClass(TapPlus):
         output_file : str, optional, default None
             file name where the results are saved if dumpToFile is True.
             If this parameter is not provided, the jobid is used instead
-        output_format : str, optional, default 'votable'
-            results format. Available formats are: 'votable', 'votable_plain',
-             'fits', 'csv' and 'json', default is 'votable'.
-             Returned results for 'votable' 'ecsv' and 'fits' format are compressed
+        output_format : str, optional, default 'votable_gzip'
+            results format. Available formats are: 'votable_gzip', 'votable', 'votable_plain',
+             'fits', 'csv' and 'json', default is 'votable_gzip'.
+             Returned results for 'votable_gzip' 'ecsv' and 'fits' format are compressed
              gzip files.
         verbose : bool, optional, default 'False'
             flag to display information about the process
@@ -903,16 +928,17 @@ class GaiaClass(TapPlus):
                                         background=background,
                                         upload_resource=upload_resource,
                                         upload_table_name=upload_table_name,
-                                        autorun=autorun)
+                                        autorun=autorun,
+                                        format_with_results_compressed=('votable_gzip', 'fits', 'ecsv'))
 
     def get_status_messages(self):
         """Retrieve the messages to inform users about
         the status of Gaia TAP
         """
         try:
-            subContext = self.GAIA_MESSAGES
-            connHandler = self._TapPlus__getconnhandler()
-            response = connHandler.execute_tapget(subContext, verbose=False)
+            sub_context = self.GAIA_MESSAGES
+            conn_handler = self._TapPlus__getconnhandler()
+            response = conn_handler.execute_tapget(sub_context, verbose=False)
             if response.status == 200:
                 if isinstance(response, Iterable):
                     for line in response:

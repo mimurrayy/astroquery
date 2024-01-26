@@ -15,14 +15,11 @@ Created on 30 jun. 2016
 
 """
 
-try:
-    # python 3
-    import http.client as httplib
-except ImportError:
-    # python 2
-    import httplib
+import http.client as httplib
 import mimetypes
+import platform
 import time
+import os
 from astroquery.utils.tap.xmlparser import utils
 from astroquery.utils.tap import taputils
 from astroquery import version
@@ -122,7 +119,8 @@ class TapConn:
         self.__postHeaders = {
             "Content-type": CONTENT_TYPE_POST_DEFAULT,
             "Accept": "text/plain",
-            "User-Agent": "astroquery/{vers}".format(vers=version.version),
+            "User-Agent": "astroquery/{vers} Python/{sysver} ({plat})".format(
+                vers=version.version, plat=platform.system(), sysver=platform.python_version()),
         }
         self.__getHeaders = {}
         self.__cookie = None
@@ -210,7 +208,7 @@ class TapConn:
         An HTTP(s) response object
         """
         context = self.__get_data_context(query)
-        return self.__execute_get(context, verbose)
+        return self.__execute_get(context, verbose=verbose)
 
     def execute_datalinkget(self, subcontext, query, *, verbose=False):
         """Executes a datalink GET request
@@ -230,8 +228,8 @@ class TapConn:
         -------
         An HTTP(s) response object
         """
-        context = self.__get_datalink_context(subcontext, query)
-        return self.__execute_get(context, verbose)
+        context = self.__get_datalink_context(subcontext, encodedData=query)
+        return self.__execute_get(context, verbose=verbose)
 
     def __execute_get(self, context, *, verbose=False):
         conn = self.__get_connection(verbose=verbose)
@@ -587,13 +585,16 @@ class TapConn:
         if content_disposition is not None:
             p = content_disposition.find('filename="')
             if p >= 0:
-                filename = content_disposition[p+10:len(content_disposition)-1]
+                filename = os.path.basename(content_disposition[p+10:len(content_disposition)-1])
                 content_encoding = self.find_header(headers, 'Content-Encoding')
+
                 if content_encoding is not None:
-                    if "gzip" == content_encoding.lower():
-                        filename += ".gz"
-                    elif "zip" == content_encoding.lower():
-                        filename += ".zip"
+                    if not (filename.endswith('.gz') or filename.endswith('.zip')):
+                        if "gzip" == content_encoding.lower():
+                            filename += ".gz"
+                        elif "zip" == content_encoding.lower():
+                            filename += ".zip"
+
                 return filename
         return None
 
