@@ -104,6 +104,9 @@ class XMMNewtonClass(BaseQuery):
         extension : string
             file format, optional, by default all formats
             values: ASC, ASZ, FTZ, HTM, IND, PDF, PNG
+        cache : bool
+            Defaults to True. If set overrides global caching behavior.
+            See :ref:`caching documentation <astroquery_cache>`.
 
         Returns
         -------
@@ -395,8 +398,16 @@ class XMMNewtonClass(BaseQuery):
         as this is the convention used by the pipeline.
         The structure and the content of the extracted compressed FITS files
         are described in details in the Pipeline Products Description
-        [XMM-SOC-GEN-ICD-0024](https://xmm-tools.cosmos.esa.int/external/xmm_obs_info/odf/data/docs/XMM-SOC-GEN-ICD-0024.pdf).
+        [XMM-SOC-GEN-ICD-0024]
+        (https://xmm-tools.cosmos.esa.int/external/xmm_obs_info/odf/data/docs/XMM-SOC-GEN-ICD-0024.pdf).
 
+        The RMF to be used for the spectral analysis should be generated with the same PPS version as the spectrum,
+        background and ARF. The PPS version can be found in SASVERS keyword in the SPECTRUM file, characters [-6:-3].
+        Once the sas version is determined, the code should look for the proper version of RMF in the FTP tree.
+        However, for the current PPS versions available in the archive, i.e v18.0, v19.0, v20.0 and v21.0,
+        all RMF matrices are equal among the versions and for all instruments, so it is possible to download the last
+        one, v21.0, available in the root FTP stored in 'rmf_ftp'. In the future, the FTP tree and/or PPS keywords will
+        be modified to make it easier to download the appropriate RMF file for each spectrum.
         """
         _instrument = ["M1", "M2", "PN", "EP"]
         _product_type = ["SRSPEC", "BGSPEC", "SRCARF"]
@@ -414,7 +425,7 @@ class XMMNewtonClass(BaseQuery):
         try:
             with esatar.open(filename, "r") as tar:
                 ret = {}
-                for member in tar.getmembers():
+                for member in [x for x in tar.getmembers() if not x.name.lower().endswith('png')]:
                     paths = os.path.split(member.name)
                     fname = paths[1]
                     paths = os.path.split(paths[0])
@@ -447,7 +458,7 @@ class XMMNewtonClass(BaseQuery):
                                 elif fname_info["I"] == "PN":
                                     inst = "PN/"
                                     file_name, file_ext = os.path.splitext(rmf_fname)
-                                    rmf_fname = file_name + "_v20.0" + file_ext
+                                    rmf_fname = file_name + "_v21.0" + file_ext
 
                                 link = self._rmf_ftp + inst + rmf_fname
 

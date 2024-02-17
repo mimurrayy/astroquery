@@ -13,25 +13,26 @@ European Space Agency (ESA)
 Created on 30 jun. 2016
 Modified on 1 jun. 2021 by mhsarmiento
 """
-from urllib.parse import urlencode
-
-from astroquery.utils.tap import taputils
-from astroquery.utils.tap.conn.tapconn import TapConn
-from astroquery.utils.tap.xmlparser.tableSaxParser import TableSaxParser
-from astroquery.utils.tap.model.job import Job
-from astroquery.utils.tap.gui.login import LoginDialog
-from astroquery.utils.tap.xmlparser.jobSaxParser import JobSaxParser
-from astroquery.utils.tap.xmlparser.jobListSaxParser import JobListSaxParser
-from astroquery.utils.tap.xmlparser.groupSaxParser import GroupSaxParser
-from astroquery.utils.tap.xmlparser.sharedItemsSaxParser import SharedItemsSaxParser  # noqa
-from astroquery.utils.tap.xmlparser import utils
-from astroquery.utils.tap.model.filter import Filter
-import requests
-from astroquery import log
 import getpass
 import os
-from astropy.table.table import Table
 import tempfile
+from urllib.parse import urlencode
+
+import requests
+from astropy.table.table import Table
+
+from astroquery import log
+from astroquery.utils.tap import taputils
+from astroquery.utils.tap.conn.tapconn import TapConn
+from astroquery.utils.tap.gui.login import LoginDialog
+from astroquery.utils.tap.model.filter import Filter
+from astroquery.utils.tap.model.job import Job
+from astroquery.utils.tap.xmlparser import utils
+from astroquery.utils.tap.xmlparser.groupSaxParser import GroupSaxParser
+from astroquery.utils.tap.xmlparser.jobListSaxParser import JobListSaxParser
+from astroquery.utils.tap.xmlparser.jobSaxParser import JobSaxParser
+from astroquery.utils.tap.xmlparser.sharedItemsSaxParser import SharedItemsSaxParser  # noqa
+from astroquery.utils.tap.xmlparser.tableSaxParser import TableSaxParser
 
 __all__ = ['Tap', 'TapPlus']
 
@@ -510,8 +511,8 @@ class Tap:
         if jobid is None:
             log.info("No job identifier found")
             return None
-        subContext = f"async/{jobid}"
-        response = self.__connHandler.execute_tapget(subContext,
+        sub_context = f"async/{jobid}"
+        response = self.__connHandler.execute_tapget(sub_context,
                                                      verbose=verbose)
         if verbose:
             print(response.status, response.reason)
@@ -869,10 +870,13 @@ class TapPlus(Tap):
                                                  200)
         if verbose:
             print("Reading...")
+        chunk = True
         if output_file is not None:
-            file = open(output_file, "wb")
-            file.write(response.read())
-            file.close()
+            with open(output_file, 'wb') as file:
+                while chunk:
+                    chunk = response.read(8 * 1024)
+                    if chunk:
+                        file.write(chunk)
             if verbose:
                 print("Done.")
             return None
@@ -1261,13 +1265,18 @@ class TapPlus(Tap):
             print(f"USER response = {user}")
         return user.startswith(f"{user_id}:") and user.count("\\n") == 0
 
-    def get_datalinks(self, ids, *, verbose=False):
+    def get_datalinks(self, ids, *, linking_parameter=None, verbose=False):
         """Gets datalinks associated to the provided identifiers
 
         Parameters
         ----------
         ids : str list, mandatory
             list of identifiers
+        linking_parameter : str, optional, default SOURCE_ID, valid values: SOURCE_ID, TRANSIT_ID, IMAGE_ID
+            By default, all the identifiers are considered as source_id
+            SOURCE_ID: the identifiers are considered as source_id
+            TRANSIT_ID: the identifiers are considered as transit_id
+            IMAGE_ID: the identifiers are considered as sif_observation_id
         verbose : bool, optional, default 'False'
             flag to display information about the process
 
@@ -1277,15 +1286,20 @@ class TapPlus(Tap):
         """
         if verbose:
             print("Retrieving datalink.")
+
         if ids is None:
             raise ValueError("Missing mandatory argument 'ids'")
         if isinstance(ids, str):
             ids_arg = f"ID={ids}"
         else:
             if isinstance(ids, int):
-                ids_arg = f"ID={ids}"
+                ids_arg = f"ID={str(ids)}"
             else:
                 ids_arg = f"ID={','.join(str(item) for item in ids)}"
+
+        if linking_parameter is not None:
+            ids_arg = f'{ids_arg}&LINKING_PARAMETER={linking_parameter}'
+
         if verbose:
             print(f"Datalink request: {ids_arg}")
         connHandler = self.__getconnhandler()

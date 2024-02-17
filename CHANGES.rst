@@ -26,6 +26,8 @@ ipac.irsa
   ``columns``, and the ``cache`` and ``verbose`` kwargs have been
   deprecated as they have no effect. [#2823]
 
+- Method to run SIAv2 VO queries is added. [#2837]
+
 gaia
 ^^^^
 
@@ -42,6 +44,13 @@ gaia
 - New output formats. votable, to get an uncompressed votable file (Content-Type: application/x-votable+xml).
   new votable_gzip (which is now the default), to get a compressed votable file (Content-Encoding: gzip and Content-Type: application/x-votable+gzip).
   ecsv, to get an ecsv compressed file (Content-Encoding: gzip and Content-Type: text/ecsv+gzip). [#2907]
+
+- For the functions cone_search, cone_search_async, launch_job and launch_job_async the data can be retrieved for the json output_format [##2927]
+
+- The method ``get_datalinks`` can be used with the new parameter linking_parameter. It completes PR #2859. [#2936]
+
+- Fix the exception thrown when the functions launch_job and launch_job_async retrieve the data for the json output_format but
+  do not dump the results to a file . [#2947]
 
 
 hsa
@@ -60,7 +69,19 @@ esa.hubble
 - Update to TAP url to query data and download files, aligned with the new eHST Science Archive. [#2567][#2597]
 - Status and maintenance messages from eHST TAP when the module is instantiated. get_status_messages method to retrieve them. [#2597]
 - New methods to download single files ``download_file`` and download FITS associated to an observation ``download_fits_files``. [#2797]
-- New function to retrieve all the files associated to an observation. [#2797]
+- New function to retrieve all the files associated to an observation ``get_associated_files``. [#2797]
+- New methods to retrieve metadata (``get_observations_from_program``) and files (``download_files_from_program``)
+  associated to a proposal. [#2910]
+
+esa.xmm_newton
+^^^^^^^^^^^^^^
+- New version of RMF matrices (v21). [#2910] [#2932]
+
+simbad
+^^^^^^
+
+- new ``query_tap`` method to access SIMBAD. This comes with additional methods to explore SIMBAD's tables and
+  their links: ``Simbad.list_tables``, ``Simbad.list_columns``, and ``Simbad.list_linked_tables``. [#2856]
 
 solarsystem.neodys
 ^^^^^^^^^^^^^^^^^^
@@ -198,6 +219,12 @@ jplsbdb
 - Fix a bug for jplsdbd query when the returned physical quantity contains
   a unit with exponential. [#2377]
 
+jplspec
+^^^^^^^
+
+- Fix a bug in lookup-table generation when using ``parse_name_locally``
+  option. [#2945]
+
 linelists.cdms
 ^^^^^^^^^^^^^^
 
@@ -229,6 +256,9 @@ mast
 - Updating documentation to address the difference between ``obsid`` and ``obs_id`` database fields. [#2857]
 
 - Bug fix in ``Observations.query_criteria()`` to use ``page`` and ``pagesize`` parameters [#2915]
+
+- Added ``Mast.mast_query`` to ``MastClass`` to handle the creation of parameter dictionaries for
+  MAST Service queries. [#2785]
 
 nist
 ^^^^
@@ -353,6 +383,10 @@ Infrastructure, Utility and Other Changes and Additions
 
 - Versions of astropy <4.2.1 and numpy <1.18 are no longer supported. [#2602]
 
+utils.tap
+^^^^^^^^^
+
+- Data downloads are now executed in streaming mode. [#2910]
 
 
 0.4.6 (2022-03-22)

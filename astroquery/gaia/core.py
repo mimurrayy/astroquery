@@ -13,11 +13,13 @@ European Space Agency (ESA)
 Created on 30 jun. 2016
 Modified on 18 Ene. 2022 by mhsarmiento
 """
+import json
 import os
 import shutil
 import zipfile
 from collections.abc import Iterable
 from datetime import datetime, timezone
+from pathlib import Path
 
 from astropy import units
 from astropy import units as u
@@ -44,6 +46,7 @@ class GaiaClass(TapPlus):
     MAIN_GAIA_TABLE_DEC = conf.MAIN_GAIA_TABLE_DEC
     ROW_LIMIT = conf.ROW_LIMIT
     VALID_DATALINK_RETRIEVAL_TYPES = conf.VALID_DATALINK_RETRIEVAL_TYPES
+    VALID_LINKING_PARAMETERS = conf.VALID_LINKING_PARAMETERS
     GAIA_MESSAGES = "notification?action=GetNotifications"
 
     def __init__(self, *, tap_plus_conn_handler=None,
@@ -172,7 +175,7 @@ class GaiaClass(TapPlus):
 
         Parameters
         ----------
-        ids : str list, mandatory
+        ids :  str, int, str list or int list, mandatory
             list of identifiers
         data_release: str, optional, default None
             data release from which data should be taken. E.g. 'Gaia DR3'
@@ -213,8 +216,8 @@ class GaiaClass(TapPlus):
             By default, this value will be set to False. If it is set to 'true'
             the Datalink items tags will not be checked.
         format : str, optional, default 'votable_gzip'
-            loading format. Other available formats are 'votable', 'csv', 'ecsv','json','votable_plain' and 'fits'
-        output_file : string, optional, default None
+            loading format. Other available formats are 'votable', 'csv', 'ecsv','votable_plain' and 'fits'
+        output_file : string or pathlib.PosixPath, optional, default None
             file where the results are saved.
             If it is not provided, the http response contents are returned.
         overwrite_output_file : boolean, optional, default False
@@ -236,6 +239,14 @@ class GaiaClass(TapPlus):
             output_file = os.path.join(os.getcwd(), temp_dirname, downloadname_formated)
         else:
             output_file_specified = True
+
+            if isinstance(output_file, str):
+                if not output_file.lower().endswith('.zip'):
+                    output_file = output_file + '.zip'
+            elif isinstance(output_file, Path):
+                if not output_file.suffix.endswith('.zip'):
+                    output_file.with_suffix('.zip')
+
             output_file = os.path.abspath(output_file)
             if not overwrite_output_file and os.path.exists(output_file):
                 raise ValueError(f"{output_file} file already exists. Please use overwrite_output_file='True' to "
@@ -277,10 +288,10 @@ class GaiaClass(TapPlus):
         params_dict['RETRIEVAL_TYPE'] = str(retrieval_type)
         params_dict['USE_ZIP_ALWAYS'] = 'true'
 
-        valid_param = {'SOURCE_ID', 'TRANSIT_ID', 'IMAGE_ID'}
-        if linking_parameter not in valid_param:
+        if linking_parameter not in self.VALID_LINKING_PARAMETERS:
             raise ValueError(
-                f"Invalid linking_parameter value '{linking_parameter}' (Valid values: {', '.join(valid_param)})")
+                f"Invalid linking_parameter value '{linking_parameter}' (Valid values: "
+                f"{', '.join(self.VALID_LINKING_PARAMETERS)})")
         else:
             if linking_parameter != 'SOURCE_ID':
                 params_dict['LINKING_PARAMETER'] = linking_parameter
@@ -308,14 +319,9 @@ class GaiaClass(TapPlus):
             if output_file_specified:
                 log.info("output_file = %s" % output_file)
 
-        log.debug("List of products available:")
-        # for key, value in files.items():
-        # print("Product =", key)
-
-        items = sorted([key for key in files.keys()])
-        for item in items:
-            # print(f'* {item}')
-            if verbose:
+        if log.isEnabledFor(20):
+            log.debug("List of products available:")
+            for item in sorted([key for key in files.keys()]):
                 log.debug("Product = " + item)
 
         return files
@@ -330,7 +336,7 @@ class GaiaClass(TapPlus):
         # r=root, d=directories, f = files
         for r, d, f in os.walk(path):
             for file in f:
-                if '.fits' in file or '.xml' in file or '.csv' in file:
+                if file.lower().endswith(('.fits', '.xml', '.csv', '.ecsv')):
                     files[file] = os.path.join(r, file)
 
         for key, value in files.items():
@@ -356,24 +362,106 @@ class GaiaClass(TapPlus):
                                    fast_reader=False)
                 tables.append(table)
                 files[key] = tables
+
+            elif '.json' in key:
+                tables = []
+                with open(value) as f:
+                    data = json.load(f)
+
+                    if data.get('data') and data.get('metadata'):
+
+                        column_name = []
+                        for name in data['metadata']:
+                            column_name.append(name['name'])
+
+                        result = Table(rows=data['data'], names=column_name, masked=True)
+
+                        for v in data['metadata']:
+                            col_name = v['name']
+                            result[col_name].unit = v['unit']
+                            result[col_name].description = v['description']
+                            result[col_name].meta = {'metadata': v}
+
+                        files[key] = result
+                    else:
+                        tables.append(Table.read(value, format='pandas.json'))
+                        files[key] = tables
+
         return files
 
-    def get_datalinks(self, ids, *, verbose=False):
+    def get_datalinks(self, ids, *, linking_parameter='SOURCE_ID', verbose=False):
         """Gets datalinks associated to the provided identifiers
         TAP+ only
 
         Parameters
         ----------
-        ids : str list, mandatory
+        ids : str, int, str list or int list, mandatory
             list of identifiers
+        linking_parameter : str, optional, default SOURCE_ID, valid values: SOURCE_ID, TRANSIT_ID, IMAGE_ID
+            By default, all the identifiers are considered as source_id
+            SOURCE_ID: the identifiers are considered as source_id
+            TRANSIT_ID: the identifiers are considered as transit_id
+            IMAGE_ID: the identifiers are considered as sif_observation_id
         verbose : bool, optional, default 'False'
             flag to display information about the process
 
         Returns
         -------
         A table object
+
+        Examples
+        --------
+        Id formats.
+
+        -- Gaia.get_datalinks(iids=1104405489608579584) # single id as an int
+
+        -- Gaia.get_datalinks(ids='1104405489608579584, 1809140662896080256') # multiple ids as a str
+
+        -- Gaia.get_datalinks(ids=(1104405489608579584, 1809140662896080256)) # multiple ids as an int list
+
+        -- Gaia.get_datalinks(ids=('1104405489608579584','1809140662896080256')) # multiple ids as str list
+
+        -- Gaia.get_datalinks(ids='4295806720-38655544960') # range of ids as a str
+
+        -- Gaia.get_datalinks(ids='4295806720-38655544960, 549755818112-1275606125952') # multiple ranges of ids as
+        a str
+
+        -- Gaia.get_datalinks(ids=('4295806720-38655544960', '549755818112-1275606125952') # multiple ranges of ids
+        as a str list
+
+        -- Gaia.get_datalinks(ids='Gaia DR3 1104405489608579584') # single designator
+
+        -- Gaia.get_datalinks(ids='Gaia DR3 1104405489608579584, Gaia DR3 1809140662896080256') # multiple
+        designators as a str
+
+        -- Gaia.get_datalinks(ids=('Gaia DR3 1104405489608579584','Gaia DR3 1809140662896080256')) # multiple
+        designators as a str list
+
+        -- Gaia.get_datalinks(ids='Gaia DR3 4295806720-Gaia DR3 38655544960') # range of designators as a str
+
+        -- Gaia.get_datalinks(ids='Gaia DR3 4295806720-Gaia DR3 38655544960, Gaia DR3 549755818112-Gaia DR3
+        1275606125952') # multiple ranges of designators as a str
+
+        -- Gaia.get_datalinks(ids=('Gaia DR3 4295806720-Gaia DR3 38655544960', 'Gaia DR3 549755818112-Gaia DR3
+        1275606125952')) # multiple ranges of designators as a str list
+
+        -- Gaia.get_datalinks(ids='Gaia DR3 4295806720-Gaia DR3 38655544960, Gaia DR2 549755818112-Gaia DR2
+        1275606125952') # multiple ranges of designators with different releases as a str
+
+        -- Gaia.get_datalinks(ids=('Gaia DR3 4295806720-Gaia DR3 38655544960', 'Gaia DR2 549755818112-Gaia DR2
+        1275606125952')) # multiple ranges of designators with different releases as a str list
         """
-        return self.__gaiadata.get_datalinks(ids=ids, verbose=verbose)
+
+        if linking_parameter not in self.VALID_LINKING_PARAMETERS:
+            raise ValueError(
+                f"Invalid linking_parameter value '{linking_parameter}' (Valid values: "
+                f"{', '.join(self.VALID_LINKING_PARAMETERS)})")
+
+        final_linking_parameter = None
+        if linking_parameter != 'SOURCE_ID':
+            final_linking_parameter = linking_parameter
+
+        return self.__gaiadata.get_datalinks(ids=ids, linking_parameter=final_linking_parameter, verbose=verbose)
 
     def __query_object(self, coordinate, *, radius=None, width=None, height=None,
                        async_job=False, verbose=False, columns=()):
@@ -382,20 +470,20 @@ class GaiaClass(TapPlus):
 
         Parameters
         ----------
-        coordinate : astropy.coordinate, mandatory
+        coordinate : str or astropy.coordinate, mandatory
             coordinates center point
-        radius : astropy.units if no 'width' nor 'height' are provided
+        radius : str or astropy.units if no 'width' nor 'height' are provided
             radius (deg)
-        width : astropy.units if no 'radius' is provided
+        width : str or astropy.units if no 'radius' is provided
             box width
-        height : astropy.units if no 'radius' is provided
+        height : str or astropy.units if no 'radius' is provided
             box height
         async_job : bool, optional, default 'False'
             executes the query (job) in asynchronous/synchronous mode (default
             synchronous)
         verbose : bool, optional, default 'False'
             flag to display information about the process
-        columns: list, optional, default []
+        columns: list, optional, default ()
             if empty, all columns will be selected
 
         Returns
@@ -456,18 +544,19 @@ class GaiaClass(TapPlus):
 
     def query_object(self, coordinate, *, radius=None, width=None, height=None,
                      verbose=False, columns=()):
-        """Launches a job
+        """Launches a synchronous cone search for the input search radius or the box on the sky, sorted by angular
+        separation
         TAP & TAP+
 
         Parameters
         ----------
-        coordinate : astropy.coordinates, mandatory
+        coordinate : str or astropy.coordinates, mandatory
             coordinates center point
-        radius : astropy.units if no 'width'/'height' are provided
+        radius : str or astropy.units if no 'width'/'height' are provided
             radius (deg)
-        width : astropy.units if no 'radius' is provided
+        width : str or astropy.units if no 'radius' is provided
             box width
-        height : astropy.units if no 'radius' is provided
+        height : str or astropy.units if no 'radius' is provided
             box height
         verbose : bool, optional, default 'False'
             flag to display information about the process
@@ -484,18 +573,19 @@ class GaiaClass(TapPlus):
 
     def query_object_async(self, coordinate, *, radius=None, width=None,
                            height=None, verbose=False, columns=()):
-        """Launches a job (async)
+        """Launches an asynchronous cone search for the input search radius or the box on the sky, sorted by angular
+        separation
         TAP & TAP+
 
         Parameters
         ----------
-        coordinate : astropy.coordinates, mandatory
+        coordinate : str or astropy.coordinates, mandatory
             coordinates center point
-        radius : astropy.units if no 'width'/'height' are provided
+        radius : str or astropy.units if no 'width'/'height' are provided
             radius
-        width : astropy.units if no 'radius' is provided
+        width : str or astropy.units if no 'radius' is provided
             box width
-        height : astropy.units if no 'radius' is provided
+        height : str or astropy.units if no 'radius' is provided
             box height
         verbose : bool, optional, default 'False'
             flag to display information about the process
@@ -539,7 +629,7 @@ class GaiaClass(TapPlus):
             when the job is executed in asynchronous mode, this flag specifies
             whether the execution will wait until results are available
         output_file : str, optional, default None
-            file name where the results are saved if dumpToFile is True.
+            file name where the results are saved if ``dump_to_file`` is True.
             If this parameter is not provided, the jobid is used instead
         output_format : str, optional, default 'votable_gzip'
             results format. Available formats are: 'votable', 'votable_plain',
@@ -617,9 +707,9 @@ class GaiaClass(TapPlus):
 
         Parameters
         ----------
-        coordinate : astropy.coordinate, mandatory
+        coordinate : str or astropy.coordinate, mandatory
             coordinates center point
-        radius : astropy.units, mandatory
+        radius : str or astropy.units, mandatory
             radius
         table_name : str, optional, default main gaia table name doing the cone search against
         ra_column_name : str, optional, default ra column in main gaia table
@@ -627,7 +717,7 @@ class GaiaClass(TapPlus):
         dec_column_name : str, optional, default dec column in main gaia table
             dec column doing the cone search against
         output_file : str, optional, default None
-            file name where the results are saved if dumpToFile is True.
+            file name where the results are saved if ``dump_to_file`` is True.
             If this parameter is not provided, the jobid is used instead
         output_format : str, optional, default 'votable_gzip'
             results format. Available formats are: 'votable', 'votable_plain',
@@ -667,9 +757,9 @@ class GaiaClass(TapPlus):
 
         Parameters
         ----------
-        coordinate : astropy.coordinate, mandatory
+        coordinate : str or astropy.coordinate, mandatory
             coordinates center point
-        radius : astropy.units, mandatory
+        radius : str or astropy.units, mandatory
             radius
         table_name : str, optional, default main gaia table name doing the cone search against
         ra_column_name : str, optional, default ra column in main gaia table
@@ -681,7 +771,7 @@ class GaiaClass(TapPlus):
             specifies whether
             the execution will wait until results are available
         output_file : str, optional, default None
-            file name where the results are saved if dumpToFile is True.
+            file name where the results are saved if ``dump_to_file`` is True.
             If this parameter is not provided, the jobid is used instead
         output_format : str, optional, default 'votable_gzip'
             results format. Available formats are: 'votable', 'votable_plain',
@@ -742,6 +832,15 @@ class GaiaClass(TapPlus):
 
     @staticmethod
     def correct_table_units(table):
+        """Correct format in the units of the columns
+        TAP & TAP+
+
+        Parameters
+        ----------
+        table : `~astropy.table.Table`, mandatory
+            change the format of the units in the columns of the input table: '.' by ' ' and "'" by ""
+        """
+
         for cn in table.colnames:
             col = table[cn]
             if isinstance(col.unit, u.UnrecognizedUnit):
@@ -800,7 +899,7 @@ class GaiaClass(TapPlus):
 
         Returns
         -------
-        Boolean indicating if the specified user is valid
+        A Job object
         """
         if radius < 0.1 or radius > 10.0:
             raise ValueError(f"Invalid radius value. Found {radius}, valid range is: 0.1 to 10.0")
@@ -847,7 +946,7 @@ class GaiaClass(TapPlus):
         name : str, optional, default None
             custom name defined by the user for the job that is going to be created
         output_file : str, optional, default None
-            file name where the results are saved if dumpToFile is True.
+            file name where the results are saved if ``dump_to_file`` is True.
             If this parameter is not provided, the jobid is used instead
         output_format : str, optional, default 'votable_gzip'
             results format. Available formats are: 'votable_gzip', 'votable', 'votable_plain',
@@ -862,7 +961,7 @@ class GaiaClass(TapPlus):
             resource to be uploaded to UPLOAD_SCHEMA
         upload_table_name : str, optional, default None
             resource temporary table name associated to the uploaded resource.
-            This argument is required if upload_resource is provided.
+            This argument is required if ``upload_resource`` is provided.
 
         Returns
         -------
@@ -892,7 +991,7 @@ class GaiaClass(TapPlus):
         name : str, optional, default None
             custom name defined by the user for the job that is going to be created
         output_file : str, optional, default None
-            file name where the results are saved if dumpToFile is True.
+            file name where the results are saved if ``dump_to_file`` is True.
             If this parameter is not provided, the jobid is used instead
         output_format : str, optional, default 'votable_gzip'
             results format. Available formats are: 'votable_gzip', 'votable', 'votable_plain',
@@ -910,7 +1009,7 @@ class GaiaClass(TapPlus):
             resource to be uploaded to UPLOAD_SCHEMA
         upload_table_name : str, optional, default None
             resource temporary table name associated to the uploaded resource.
-            This argument is required if upload_resource is provided.
+            This argument is required if ``upload_resource`` is provided.
         autorun : boolean, optional, default True
             if 'True', sets 'phase' parameter to 'RUN',
             so the framework can start the job.

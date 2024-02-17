@@ -180,6 +180,9 @@ class SkyViewClass(BaseQuery):
         height : `~astropy.units.Quantity` or None
             The height of the specified field.  Must be specified
             with ``width``.
+        cache : bool
+            Defaults to True. If set overrides global caching behavior.
+            See :ref:`caching documentation <astroquery_cache>`.
 
         References
         ----------
@@ -251,10 +254,10 @@ class SkyViewClass(BaseQuery):
 
         if radius is not None:
             size_deg = str(radius.to(u.deg).value * 2)
-        elif width and height:
-            size_deg = "{0},{1}".format(width.to(u.deg).value,
-                                        height.to(u.deg).value)
-        elif width and height:
+        elif width is not None and height is not None:
+            size_deg = "{0},{1}".format(u.Quantity(width).to(u.deg).value,
+                                        u.Quantity(height).to(u.deg).value)
+        elif width is not None or height is not None:
             raise ValueError("Must specify width and height if you "
                              "specify either.")
         else:
